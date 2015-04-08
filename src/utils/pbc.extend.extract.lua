@@ -5,7 +5,9 @@ function extract(tbl)
     local typename = rawget(tbl , 1)
     local buffer = rawget(tbl , 2)
     if type(typename) == "string" and type(buffer) == "string" then
-        expand(tbl)
+        if check(typename) then
+            expand(tbl)
+        end
     end
 
     for k, v in pairs(tbl) do
