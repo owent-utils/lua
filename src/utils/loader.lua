@@ -3,14 +3,14 @@ local class_builder = require('utils.class')
 local loader = class_builder.register('utils.loader', class_builder.singleton)
 loader.loaded_mods = {}
 
--- ÒÆ³ıÄ£¿é
+-- ç§»é™¤æ¨¡å—
 function loader.remove(modname)
     local ret = package.loaded[modname]
     package.loaded[modname] = nil
     return ret
 end
 
--- °²È«¼ÓÔØÄ£¿é, ²»ÔÊĞí¼ÓÔØuserdata
+-- å®‰å…¨åŠ è½½æ¨¡å—, ä¸å…è®¸åŠ è½½userdata
 function loader.load(modname)
     local ret = require(modname)
     if 'userdata' == type(ret) then
@@ -28,35 +28,35 @@ function loader.load(modname)
     return ret
 end
 
--- °²È«¼ÓÔØtable, ²»ÔÊĞí¼ÓÔØuserdata
+-- å®‰å…¨åŠ è½½table, ä¸å…è®¸åŠ è½½userdata
 function loader.load_table(table_obj, prefix, root)
     assert('table' == type(table_obj))
     prefix = prefix or ''
     root = root or _G
     for k, v in pairs(table_obj) do
-        -- ×Ó½á¹¹
+        -- å­ç»“æ„
         if 'table' == type(v) then
             if nil == root[k] then
                 root[k] = {}
             end
             loader.load_table(v, prefix .. k .. '.', root[k])
 
-        -- ÁĞ±íÎÄ¼ş
+        -- åˆ—è¡¨æ–‡ä»¶
         elseif 'string' == type(k) and 'string' == type(v) then
             loader.load_list(v, prefix .. k .. '.', root)
 
-        -- ÆÕÍ¨ÎÄ¼ş: table list
+        -- æ™®é€šæ–‡ä»¶: table list
         elseif 'number' == type(k) and 'string' == type(v) then
             loader.load(prefix .. v)
             
-        -- ÆÕÍ¨ÎÄ¼ş: key-valueÅäÖÃ
+        -- æ™®é€šæ–‡ä»¶: key-valueé…ç½®
         else
             root[k] = loader.load(prefix .. k)
         end
     end
 end
 
--- °²È«¼ÓÔØÁĞ±í, ²»ÔÊĞí¼ÓÔØuserdata
+-- å®‰å…¨åŠ è½½åˆ—è¡¨, ä¸å…è®¸åŠ è½½userdata
 function loader.load_list(modname, prefix, root)
     prefix = prefix or ''
     root = root or _G
@@ -71,11 +71,11 @@ function loader.load_list(modname, prefix, root)
     return true
 end
 
--- Çå¿ÕËùÓĞ·ÇÔ¤ÖÃÄ£¿é
+-- æ¸…ç©ºæ‰€æœ‰éé¢„ç½®æ¨¡å—
 function loader.clear()
     for k, v in pairs(loader.loaded_mods) do
         package.loaded[k] = nil
-        -- log_debug('remove package %s', k)
+        --log_debug('remove package %s', k)
     end
     package.loaded['utils.adaptor'] = nil
     package.loaded['utils.vardump'] = nil
@@ -86,12 +86,13 @@ function loader.clear()
     
     -- vardump(package.loaded, {ostream = log_stream, recursive = 1})
 
-    -- Çå¿ÕºóÒª±£Ö¤loaderÊ×ÏÈ±»¼ÓÔØ£¬²¢³õÊ¼»¯utils°ü
+    -- æ¸…ç©ºåè¦ä¿è¯loaderé¦–å…ˆè¢«åŠ è½½ï¼Œå¹¶åˆå§‹åŒ–utilsåŒ…
     class_builder = require('utils.class')
     loader = require('utils.loader')
     require('utils.event')
 end
 
+--å…ˆæ¸…ç†å†é‡åŠ è½½ä¼ å…¥çš„å¤šä¸ªluaæ–‡ä»¶
 function loader.reload(...)
     loader.clear()
     local args = {...}
@@ -100,9 +101,19 @@ function loader.reload(...)
     end
 end
 
+--å…ˆæ¸…ç†å†é‡åŠ è½½
+function loader.smart_reload()
+    local loaded_mods_temp = loader.loaded_mods
+	
+    loader.clear()
+  
+    for k, v in pairs(loaded_mods_temp) do
+        loader.load(k)
+    end
+end
 
--- °²È«Ô¤¼ÓÔØÄ£¿é, ²»ÔÊĞí¼ÓÔØuserdata
--- ²»»á±»clearÇå¿Õ
+-- å®‰å…¨é¢„åŠ è½½æ¨¡å—, ä¸å…è®¸åŠ è½½userdata
+-- ä¸ä¼šè¢«clearæ¸…ç©º
 function loader.preload(modname)
     local ret = loader.load(modname)
     if 'userdata' ~= type(ret) then
@@ -110,6 +121,13 @@ function loader.preload(modname)
     end
 
     return ret
+end
+
+-- [DEBUG] æ‰“å°åŠ è½½çš„æ¨¡å—
+function loader.print_loaded_module()
+    for k,v in pairs(package.loaded) do
+        print(k..'    '..tostring(v))
+    end 
 end
 
 return loader

@@ -5,13 +5,13 @@ local conf = require('utils.conf')
 local id_allocator = { 0, 0, 0, 0 }
 
 local class = {
-    -- ¹«¹²»ùÀà
+    -- å…¬å…±åŸºç±»
     object = {
         __classname = 'utils.class.object',
-        __type = 'class',   -- Ä¬ÈÏÀàĞÍÎªclass
+        __type = 'class',   -- é»˜è®¤ç±»å‹ä¸ºclass
     },
 
-    -- Àà×¢²á±í
+    -- ç±»æ³¨å†Œè¡¨
     __class_reg_table = {}
 }
 
@@ -26,7 +26,7 @@ function class.set_id_allocator(...)
     end
 end
 
--- ´´½¨ĞÂµÄÊµÀıID
+-- åˆ›å»ºæ–°çš„å®ä¾‹ID
 function class.alloc_id()
     local len = #id_allocator
     id_allocator[len] = id_allocator[len] + 1
@@ -49,7 +49,7 @@ function class.alloc_id()
     return string.format('%04x%04x%04x%04x', id_allocator[1], id_allocator[2], id_allocator[3], id_allocator[4])
 end
 
--- instance_id·½·¨
+-- instance_idæ–¹æ³•
 function class.object:instance_id()
     if nil == self then
         log_error('required self\n%s', debug.traceback())
@@ -62,14 +62,14 @@ function class.object:instance_id()
     return self.__instance_id
 end
 
--- clone·½·¨
+-- cloneæ–¹æ³•
 function class.object:clone()
     local ret = table.clone(self)
     ret.__instance_id = class.alloc_id()
     return ret
 end
 
--- tostring·½·¨
+-- tostringæ–¹æ³•
 function class.object:__tostring()
     if self then
         local ret = '[' .. self.__type .. ' : ' .. self.__classname .. ']'
@@ -81,7 +81,7 @@ function class.object:__tostring()
     return '[class : object] WARNING: you should use obj:__tostring but obj.__tostring'
 end
 
--- »ñÈ¡¸¸Àà·½·¨
+-- è·å–çˆ¶ç±»æ–¹æ³•
 function class.object:__parent()
     local m = getmetatable(self)
     if nil == m then
@@ -101,9 +101,9 @@ end
 
 setmetatable(class.object, class.object)
 
--- ÉèÖÃÀàµÄ¼Ì³Ğ¹ØÏµ
--- @param child ×ÓÀà
--- @param father ¸¸Àà
+-- è®¾ç½®ç±»çš„ç»§æ‰¿å…³ç³»
+-- @param child å­ç±»
+-- @param father çˆ¶ç±»
 function class.inherit (child, father)
     if child == father then
         return
@@ -114,7 +114,7 @@ function class.inherit (child, father)
     rawset(child, '__index', father)
 end
 
--- ¸ù¾İÃû×Ö»ñÈ¡Àà
+-- æ ¹æ®åå­—è·å–ç±»
 function class.get (class_name)
     local ret = class.__class_reg_table
     for k in string.gmatch(class_name, '[%a%d_%$]+') do
@@ -127,18 +127,18 @@ function class.get (class_name)
     return ret
 end
 
--- ×¢²áÀàºÍÃüÃû¿Õ¼ä
+-- æ³¨å†Œç±»å’Œå‘½åç©ºé—´
 function class.register (class_info, base_class, class_name)
     local ret = class.__class_reg_table
     if 'string' == type(class_info) then
         local cache = nil
         for k in string.gmatch(class_info, '[%a%d_%$]+') do
-            -- ĞÂ´´½¨µÄ¸¸½ÚµãÈ«²¿¼Ì³Ğnamespace
+            -- æ–°åˆ›å»ºçš„çˆ¶èŠ‚ç‚¹å…¨éƒ¨ç»§æ‰¿namespace
             if cache and class.namespace then
                 class.inherit(cache, class.namespace)
             end
 
-            -- ²éÕÒ¼ÇÂ¼ĞÂ½Úµã
+            -- æŸ¥æ‰¾è®°å½•æ–°èŠ‚ç‚¹
             if nil == ret[k] then
                 ret[k] = {}
                 cache = ret[k]
@@ -168,13 +168,13 @@ function class.register (class_info, base_class, class_name)
     base_class = base_class or class.object
     class.inherit(ret, base_class)
 
-    -- Ä¬ÈÏÉú³Énew·½·¨
-    -- @param inst Ô­Ê¼Êı¾İ
+    -- é»˜è®¤ç”Ÿæˆnewæ–¹æ³•
+    -- @param inst åŸå§‹æ•°æ®
     if nil == rawget(ret, 'new') then
         rawset(ret, 'new', function(inst)
             inst = inst or table.create(0, 8)
             if nil == inst.__type then
-                rawset(inst, '__type', 'object')    -- Ä¬ÈÏÀàĞÍÎªobject
+                rawset(inst, '__type', 'object')    -- é»˜è®¤ç±»å‹ä¸ºobject
             end
 
             rawset(inst, '__instance_id', class.alloc_id()) -- instance id
@@ -186,13 +186,13 @@ function class.register (class_info, base_class, class_name)
     return ret
 end
 
--- readonly»¯
--- readonly ÖØÔØ__newindexº¯Êı
+-- readonlyåŒ–
+-- readonly é‡è½½__newindexå‡½æ•°
 function class.readonly__newindex(tb, key, value)
     log_error('table %s is readonly, set key %s is invalid', tostring(tb), tostring(key))
 end
 
--- ÉèÖÃtableÎªreadonly
+-- è®¾ç½®tableä¸ºreadonly
 function class.set_readonly(obj)
     local tmb = getmetatable(obj)
     if not tmb or class.readonly__newindex ~= tmb.__newindex then
@@ -201,37 +201,37 @@ function class.set_readonly(obj)
             __newindex = class.readonly__newindex,
         }
 
-        -- ÉèÖÃreadonlyºó # ²Ù×÷·ûÊ§Ğ§µÄ½â¾ö·½°¸
+        -- è®¾ç½®readonlyå # æ“ä½œç¬¦å¤±æ•ˆçš„è§£å†³æ–¹æ¡ˆ
         function wrapper:table_len() 
             return #obj
         end
 
-        -- ÉèÖÃreadonlyºópairsÊ§Ğ§µÄ½â¾ö·½°¸
+        -- è®¾ç½®readonlyåpairså¤±æ•ˆçš„è§£å†³æ–¹æ¡ˆ
         function wrapper:table_pairs() 
             return pairs(obj)
         end
 
-        -- ÉèÖÃreadonlyºóipairsÊ§Ğ§µÄ½â¾ö·½°¸
+        -- è®¾ç½®readonlyåipairså¤±æ•ˆçš„è§£å†³æ–¹æ¡ˆ
         function wrapper:table_ipairs() 
             return ipairs(obj)
         end
         
-        -- ÉèÖÃreadonlyºónextÊ§Ğ§µÄ½â¾ö·½°¸
+        -- è®¾ç½®readonlyånextå¤±æ•ˆçš„è§£å†³æ–¹æ¡ˆ
         function wrapper:table_next(index) 
             return next(obj, index)
         end
 
-        -- ÉèÖÃreadonlyºóunpackÊ§Ğ§µÄ½â¾ö·½°¸
+        -- è®¾ç½®readonlyåunpackå¤±æ•ˆçš„è§£å†³æ–¹æ¡ˆ
         function wrapper:table_unpack(index) 
             return table.unpack(obj, index)
         end
 
-        -- Ô­Ê¼table
+        -- åŸå§‹table
         function wrapper:table_raw() 
             return obj
         end
 
-        -- ¸´ÖÆ¿ÉĞ´±í
+        -- å¤åˆ¶å¯å†™è¡¨
         function wrapper:table_make_writable() 
             local ret = table.extend(obj)
             for k, v in pairs(ret) do
@@ -257,9 +257,9 @@ function class.set_readonly(obj)
     return obj
 end
 
--- ±£»¤tableÊı¾İ
+-- ä¿æŠ¤tableæ•°æ®
 function class.protect(obj, r)
-    -- ºÍreadonly»ìÓÃµÄÓÅ»¯
+    -- å’Œreadonlyæ··ç”¨çš„ä¼˜åŒ–
     local tmb = getmetatable(obj)
     if tmb and class.readonly__newindex == tmb.__newindex then
         obj = tmb.__index
@@ -269,11 +269,14 @@ function class.protect(obj, r)
     local wrapper_metatable = {}
     setmetatable(wrapper, wrapper_metatable)
 
-    for k, v in pairs(obj) do
-        if r and 'table' == type(v) or 'userdata' == type(v) then
-            rawset(wrapper, k, class.protect(v, r))
-        else
-            rawset(wrapper, k, v)
+    -- table è¿˜è¦æšä¸¾ä¿æŠ¤å­å¯¹è±¡
+    if 'table' == type(obj) then
+        for k, v in pairs(obj) do
+            if r and 'table' == type(v) or 'userdata' == type(v) then
+                rawset(wrapper, k, class.protect(v, r))
+            else
+                rawset(wrapper, k, v)
+            end
         end
     end
 
@@ -284,8 +287,8 @@ function class.protect(obj, r)
     return wrapper
 end
 
--- ÀàĞÍ³õÊ¼»¯  
--- µ¥Àı»ùÀà
+-- ç±»å‹åˆå§‹åŒ–  
+-- å•ä¾‹åŸºç±»
 do
     class.singleton = class.register('utils.class.singleton')
     rawset(class.singleton, 'new', function(self, inst)
@@ -299,14 +302,14 @@ do
     rawset(class.singleton, 'instance', class.singleton.new)
 end
 
--- ÃüÃû¿Õ¼ä
+-- å‘½åç©ºé—´
 class.namespace = class.register('utils.class.namespace', class.singleton)
 
--- ±¾µØ´úÂë
+-- æœ¬åœ°ä»£ç 
 class.native = class.register('utils.class.native', class.singleton)
 rawset(class.native, '__type', 'native code')
 
--- ¸ùÃüÃû¿Õ¼ä
+-- æ ¹å‘½åç©ºé—´
 class.register(class.__class_reg_table, class.namespace, 'utils.class.__class_reg_table')
 
 _G.utils = _G.utils or {}

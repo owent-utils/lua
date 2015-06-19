@@ -33,7 +33,7 @@ _G.lua_log_check = function(l)
 end
 
 if nil == _G.lua_log then
-    _G.lua_log = function(log_level, fmt, ...)
+    _G.lua_log = function(cat, log_level, fmt, ...)
         if lua_log_check(log_level) then
             print(string.format(fmt, ...))
         end
@@ -41,58 +41,73 @@ if nil == _G.lua_log then
 
 else
     local log_fn = _G.lua_log
-    _G.lua_log = function(log_level, fmt, ...)
+    _G.lua_log = function(cat, log_level, fmt, ...)
         if lua_log_check(log_level) then
-            log_fn(log_level, string.format(fmt, ...))
+            local args = {...}
+            if #args == 0 then 
+                --避免有些复杂字符串格式化出错
+                log_fn(cat, log_level, fmt)
+            else 
+                log_fn(cat, log_level, string.format(fmt, ...))
+            end
+            
+            
         end
     end
     
     _G.print = function(...)
         local args = {...}
         for k, v in ipairs(args) do
-            _G.lua_log(conf.LOG_LEVEL.FATAL, "%s", tostring(v))
+            _G.lua_log(0, conf.LOG_LEVEL.INFO, "%s", tostring(v))
         end
     end
 end
 
 do
-    _G.log_fatel = function(fmt, ...)
+    _G.logc_fatal = function(cat, fmt, ...)
         fmt = fmt or ''
-        lua_log(conf.LOG_LEVEL.FATAL, '[FATAL]: ' .. fmt, ...)
+        lua_log(cat, conf.LOG_LEVEL.FATAL, '[FATAL]: ' .. fmt, ...)
     end
 
-    _G.log_debug = function(fmt, ...)
+    _G.logc_debug = function(cat, fmt, ...)
         fmt = fmt or ''
-        lua_log(conf.LOG_LEVEL.DEBUG, '[DEBUG]: ' .. fmt, ...)
+        lua_log(cat, conf.LOG_LEVEL.DEBUG, '[DEBUG]: ' .. fmt, ...)
     end
 
-    _G.log_info = function(fmt, ...)
+    _G.logc_info = function(cat, fmt, ...)
         fmt = fmt or ''
-        lua_log(conf.LOG_LEVEL.INFO, '[INFO]: ' .. fmt, ...)
+        lua_log(cat, conf.LOG_LEVEL.INFO, '[INFO]: ' .. fmt, ...)
     end
 
-    _G.log_warn = function(fmt, ...)
+    _G.logc_warn = function(cat, fmt, ...)
         fmt = fmt or ''
-        lua_log(conf.LOG_LEVEL.WARNING, '[WARN]: ' .. fmt, ...)
+        lua_log(cat, conf.LOG_LEVEL.WARNING, '[WARN]: ' .. fmt, ...)
     end
 
-    _G.log_error = function(fmt, ...)
+    _G.logc_error = function(cat, fmt, ...)
         fmt = fmt or ''
-        lua_log(conf.LOG_LEVEL.ERROR, '%s\n[ERROR]: ' .. fmt, debug.traceback('[ERROR]: ', 2), ...)
+        lua_log(cat, conf.LOG_LEVEL.ERROR, '%s\n[ERROR]: ' .. fmt, debug.traceback('[ERROR]: ', 2), ...)
     end
-    
-    _G.log_stream = {}
-    do
+
+    _G.log_fatal = function(...) logc_fatal(0, ...) end
+    _G.log_debug = function(...) logc_debug(0, ...) end
+    _G.log_info = function(...) logc_info(0, ...) end
+    _G.log_warn = function(...) logc_warn(0, ...) end
+    _G.log_error = function(...) logc_error(0, ...) end
+
+    _G.log_stream = function(cat, log_fn)
+        local ret = {}
         local data_cache = ''
-        function _G.log_stream:write(...)
-            local args = {...}
-            data_cache = data_cache .. table.unpack(args)
+        function ret:write(...)
+            data_cache = data_cache .. table.concat({...})
         end
 
-        function _G.log_stream:flush()
-            log_debug(data_cache)
+        function ret:flush()
+            log_fn(cat, data_cache)
             data_cache = ''
         end
+
+        return ret
     end
 end
 
