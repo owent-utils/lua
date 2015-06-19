@@ -12,7 +12,7 @@ extern "C" {
 #include "lauxlib.h"
 }
 
-#include "log/LogWrapper.h"
+#include "log/LogWrapperMgr.h"
 
 #include "../lua_module/LuaTableExt.h"
 

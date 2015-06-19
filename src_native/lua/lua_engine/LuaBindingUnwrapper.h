@@ -121,16 +121,16 @@ namespace script {
                     // 最好是不要这么用，如果有需要再加对非POD类型的支持吧 
                     static_assert(std::is_pod<obj_t>::value, "custom type must be pod type");
 
-                    if (lua_gettop(L) < index)
-                        return static_cast<Tt>(nullptr);
-
+                    if (lua_gettop(L) < index){
+                        return static_cast<Tt>(nullptr);//nullptr static_cast from 'null_ptr' to 'unsigned long' is not allowed
+                    }
                     if (lua_isnil(L, index)) {
-                        return static_cast<Tt>(nullptr);
+                        return static_cast<Tt>(nullptr);//nullptr static_cast from 'null_ptr' to 'unsigned long' is not allowed
                     }
 
                     obj_t* ptr = reinterpret_cast<obj_t*>(lua_touserdata(L, index));
                     if (nullptr == ptr) {
-                        return static_cast<Tt>(nullptr);
+                        return static_cast<Tt>(nullptr);//nullptr static_cast from 'null_ptr' to 'unsigned long' is not allowed
                     }
 
                     return static_cast<Tt>(*ptr);
@@ -152,7 +152,7 @@ namespace script {
             template<typename... Ty> struct unwraper_var<uint16_t, Ty...> : public unwraper_var_lua_type<uint16_t, lua_Unsigned>{};
             template<typename... Ty> struct unwraper_var<uint32_t, Ty...> : public unwraper_var_lua_type<uint32_t, lua_Unsigned>{};
             template<typename... Ty> struct unwraper_var<uint64_t, Ty...> : public unwraper_var_lua_type<uint64_t, lua_Unsigned>{};
-
+            
             template<typename... Ty> struct unwraper_var<int8_t, Ty...> : public unwraper_var_lua_type<int8_t, lua_Integer>{};
             template<typename... Ty> struct unwraper_var<int16_t, Ty...> : public unwraper_var_lua_type<int16_t, lua_Integer>{};
             template<typename... Ty> struct unwraper_var<int32_t, Ty...> : public unwraper_var_lua_type<int32_t, lua_Integer>{};
@@ -510,8 +510,13 @@ namespace script {
 
             template<typename Ty, typename... Tl>
             struct unwraper_var : public std::conditional<
-                std::is_enum<Ty>::value,
-                unwraper_var_lua_type<Ty, lua_Unsigned>,    // 枚举类型
+                std::is_enum<Ty>::value || std::is_integral<Ty>::value,
+                unwraper_var_lua_type<Ty, 
+                    typename std::conditional<
+                        std::is_enum<Ty>::value || std::is_unsigned<Ty>::value,
+                        lua_Unsigned, lua_Integer
+                    >::type
+                >,    // 枚举类型
                 typename std::conditional<
                     std::is_pointer<Ty>::value,
                     unwraper_ptr_var_lua_type<Ty, Ty>,      // 指针类型

@@ -444,24 +444,24 @@ namespace script
                 return;
             }
 
-            if (LUA_HOOKCALL != ar->event && LUA_HOOKRET != ar->event && LUA_HOOKTAILRET != ar->event) {
+            if (LUA_HOOKCALL != ar->event && LUA_HOOKRET != ar->event) {
                 return;
             }
 
             ar->name = nullptr;
-#ifdef LUA_HOOKTAILRET 
-            if (LUA_HOOKTAILRET == ar->event) {
-                assert(false);
-            } else {
-#elif defined(LUA_HOOKTAILCALL)
-            if (LUA_HOOKTAILCALL == ar->event) {
-                assert(false);
-            } else {
-#endif
+//#ifdef LUA_HOOKTAILRET 
+//            if (LUA_HOOKTAILRET == ar->event) {
+//                assert(false);
+//            } else {
+//#elif defined(LUA_HOOKTAILCALL)
+//            if (LUA_HOOKTAILCALL == ar->event) {
+//                assert(false);
+//            } else {
+//#endif
                 lua_getinfo(L, "Sn", ar);
-#if defined(LUA_HOOKTAILRET) || defined(LUA_HOOKTAILCALL)
-            }
-#endif
+//#if defined(LUA_HOOKTAILRET) || defined(LUA_HOOKTAILCALL)
+//            }
+//#endif
 
             
             bool lua_func = (0 == STRING_NCASE_CMP("Lua", ar->what)) ||
@@ -533,7 +533,9 @@ namespace script
                         sprintf(name, "%s.%s", ar->namewhat, ar->name);
                     }
 
-                    profile->exit_native_func(index_key);
+                    if (name[0]) {
+                        profile->exit_native_func(index_key);
+                    }
                 }
             }
         }

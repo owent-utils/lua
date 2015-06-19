@@ -7,6 +7,6 @@ extern "C" {
 
 namespace script {
     namespace lua {
-
+        int LuaTimeExt_openLib(lua_State *L);
     }
 }

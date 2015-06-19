@@ -17,6 +17,8 @@ extern "C" {
 namespace script {
     namespace lua {
 
+        int LuaProfile_openLib(lua_State *L);
+
         struct LuaProfilePairHash {
         public:
             template <typename T, typename U>

@@ -7,7 +7,7 @@
 
 #include <std/explicit_declare.h>
 
-#include "log/LogWrapper.h"
+#include "log/LogWrapperMgr.h"
 
 #include "../lua_module/LuaAdaptor.h"
 

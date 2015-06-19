@@ -20,6 +20,11 @@
 #include "LuaBindingMgr.h"
 #include "LuaBindingUtils.h"
 
+
+#ifdef max
+#undef max
+#endif
+
 namespace script {
     namespace lua {
         /*************************************\
@@ -76,7 +81,16 @@ namespace script {
 
                 template<typename TParam>
                 static int wraper(lua_State* L, const TParam& v) {
-                    lua_pushinteger(L, static_cast<lua_Unsigned>(v));
+                    if (sizeof(v) >= sizeof(lua_Integer) && v > static_cast<TParam>(std::numeric_limits<lua_Integer>::max())) {
+                        lua_getglobal(L, "tonumber");
+                        char n[32] = { 0 };
+                        sprintf(n, "%llu", static_cast<unsigned long long>(v));
+                        lua_pushstring(L, n);
+                        lua_call(L, 1, 1);
+                    } else {
+                        lua_pushinteger(L, static_cast<lua_Unsigned>(v));
+                    }
+
                     return 1;
                 }
             };
@@ -169,7 +183,7 @@ namespace script {
             template<typename... Ty> struct wraper_var<int16_t, Ty...> : public wraper_var_lua_type<lua_Integer>{};
             template<typename... Ty> struct wraper_var<int32_t, Ty...> : public wraper_var_lua_type<lua_Integer>{};
             template<typename... Ty> struct wraper_var<int64_t, Ty...> : public wraper_var_lua_type<lua_Integer>{};
-
+            
             template<typename... Ty> struct wraper_var<float, Ty...> : public wraper_var_lua_type<lua_Number>{};
             template<typename... Ty> struct wraper_var<double, Ty...> : public wraper_var_lua_type<lua_Number>{};
 
@@ -456,8 +470,13 @@ namespace script {
             
             template<typename Ty, typename... Tl>
             struct wraper_var : public std::conditional<
-                std::is_enum<Ty>::value,
-                wraper_var_lua_type<lua_Unsigned>,      // 枚举类型
+                std::is_enum<Ty>::value || std::is_integral<Ty>::value,
+                wraper_var_lua_type<
+                    typename std::conditional<
+                        std::is_enum<Ty>::value || std::is_unsigned<Ty>::value, 
+                        lua_Unsigned, lua_Integer
+                    >::type
+                >,      // 枚举类型和未识别的整数(某些编译器的size_t和uint32_t/uint64_t被判定为不同类型)
                 typename std::conditional<
                     std::is_pointer<Ty>::value,
                     wraper_ptr_var_lua_type<Ty>,        // 指针类型

@@ -9,7 +9,7 @@ extern "C" {
 #include <lualib.h>
 }
 
-#include "log/LogWrapper.h"
+#include "log/LogWrapperMgr.h"
 
 namespace script
 {
