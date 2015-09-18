@@ -10,3 +10,7 @@ local cfg = loader.load_kv('data.conf_manager')
 --cfg:load_kv('unit.role_cfg', function(k, v)
 --    return v.id or k
 --end)
+--
+--cfg:load_kv('unit.role_cfg', function(k, v)
+--    return v.id or k
+--end, 'role_cfg')

@@ -15,16 +15,16 @@ function conf_set:get_by_table(key)
     local len = #key
     local i = 1
     local ret = self.__data
-    
+
     while ret and i <= len do
         ret = ret[key[i]]
         i = i + 1
     end
-    
+
     return ret
 end
 
-function conf_set:get(...)   
+function conf_set:get(...)
     return self:get_by_table({...})
 end
 
@@ -47,7 +47,7 @@ function conf_set:set_by_table(args)
         ret = ret[args[i]]
         i = i + 1
     end
-    
+
     ret[args[len + 1]] = args[len + 2]
     return args[len + 2]
 end
@@ -66,7 +66,7 @@ function conf_manager:set_path_rule(rule)
     self.__path_rule = rule
 end
 
-function conf_manager:load(path, data_collector_fn, kv_fn)
+function conf_manager:load(path, data_collector_fn, kv_fn, cfg_set_name)
     path = string.format(self.__path_rule, tostring(path))
     local tb = loader.load(path)
     if nil == tb then
@@ -82,8 +82,9 @@ function conf_manager:load(path, data_collector_fn, kv_fn)
         if 'number' == type(k) then
             log_info('load cfg [%s] success, ver=%s, count=%d', path, v.data_ver, v.count)
         else
-            conf_manager.__data[k] = conf_manager.__data[k] or conf_set.new({__data = {}})
-            local cfg = conf_manager.__data[k]
+            cfg_set_name = cfg_set_name or path
+            conf_manager.__data[cfg_set_name] = conf_manager.__data[cfg_set_name] or conf_set.new({__data = {}})
+            local cfg = conf_manager.__data[cfg_set_name]
             for ck, cv in ipairs(v) do
                 local rv = cv
                 local rk = { kv_fn(ck, rv) }
