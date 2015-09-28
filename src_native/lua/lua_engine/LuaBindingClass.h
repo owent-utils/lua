@@ -51,7 +51,10 @@ namespace script {
         public:
             LuaBindingClass(const char* lua_name, const char* namespace_, lua_State* L) : lua_state_(L), lua_class_name_(lua_name), owner_ns_(namespace_, L){
                 register_class();
-                memset(default_funcs_, NULL, sizeof(default_funcs_));
+                
+                for (int i = 0; i < FT_MAX) {
+                    default_funcs_[i] = NULL;
+                }
             }
 
             LuaBindingClass(const char* lua_name, LuaBindingNamespace& ns) : lua_state_(ns.getLuaState()), lua_class_name_(lua_name), owner_ns_(ns){
