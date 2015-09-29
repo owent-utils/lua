@@ -97,9 +97,9 @@ namespace script
             lua_getfield(L, -1, "path");                      /* get package.path, L: package path */
             const char* cur_path = lua_tostring(L, -1);
             if (is_front)
-                lua_pushfstring(L, "%s/?.lua;%s", path.c_str(), cur_path);      /* L: package path newpath */
+                lua_pushfstring(L, "%s/?.lua;%s/?.luac;%s", path.c_str(), path.c_str(), cur_path);      /* L: package path newpath */
             else
-                lua_pushfstring(L, "%s;%s/?.lua", cur_path, path.c_str());      /* L: package path newpath */
+                lua_pushfstring(L, "%s;%s/?.lua;%s/?.luac", cur_path, path.c_str(), path.c_str());      /* L: package path newpath */
             lua_setfield(L, -3, "path");                /* package.path = newpath, L: package path */
             lua_pop(L, 2);                                                      /* L: - */
         }
