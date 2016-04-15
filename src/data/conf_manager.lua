@@ -60,10 +60,15 @@ end
 local conf_manager = class.register('data.conf_manager', class.singleton)
 
 conf_manager.__path_rule = '%s'
+conf_manager.__list_path = 'data.conf_list'
 conf_manager.__data = {}
 
 function conf_manager:set_path_rule(rule)
     self.__path_rule = rule
+end
+
+function pbc_config_manager:set_list(l)
+    self.__list_path = l
 end
 
 function conf_manager:load(path, data_collector_fn, kv_fn, cfg_set_name)
@@ -142,8 +147,8 @@ end
 
 function conf_manager:reload()
     self.__data = {}
-    loader.remove('data.conf_list')
-    loader.load('data.conf_list')
+    loader.remove(self.__list_path)
+    loader.load(self.__list_path)
 end
 
 return conf_manager
