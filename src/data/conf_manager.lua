@@ -24,10 +24,12 @@ function conf_set:get_by_table(key)
     return ret
 end
 
+-- 数据集，通过key拉取配置数据
 function conf_set:get(...)
     return self:get_by_table({...})
 end
 
+-- 数据集，拉取所有配置数据
 function conf_set:get_all()
     return self.__data
 end
@@ -60,17 +62,30 @@ end
 local conf_manager = class.register('data.conf_manager', class.singleton)
 
 conf_manager.__path_rule = '%s'
-conf_manager.__list_path = 'data.conf_list'
+conf_manager.__list_path = nil
 conf_manager.__data = {}
 
+-- 设置路径规则
+-- @param rule 路径规则(一定要带一个%s)
+-- @note 当读取协议message类型为PROTO的配置时，实际会执行require(string.format(rule, PROTO))
+--       比如如果配置放在config目录下,那么这里rule填 config.%s
 function conf_manager:set_path_rule(rule)
     self.__path_rule = rule
 end
 
+-- 设置配置列表加载文件
+-- @param l 配置列表加载文件(一定要带一个%s)
+-- @note 当执行reload时，清空完原来的配置后后会重新加载 string.format(rule, PROTO)
 function conf_manager:set_list(l)
     self.__list_path = l
 end
 
+-- 读取配置数据块
+-- @param path 配置数据文件路径，相当于执行require(string.format(路径规则, path))
+-- @param data_blocks 二进制数据
+-- @param data_collector_fn 插入规则函数function (数据集, key, 配置项)
+-- @param kv_fn key提取规则函数function (索引, 配置项) return key列表，可以多个 end
+-- @param cfg_set_name 别名，通过pbc_config_manager:get(别名)查找配置，默认和path一样
 function conf_manager:load(path, data_collector_fn, kv_fn, cfg_set_name)
     path = string.format(self.__path_rule, tostring(path))
     local tb = loader.load(path)
@@ -104,7 +119,12 @@ function conf_manager:load(path, data_collector_fn, kv_fn, cfg_set_name)
     return true
 end
 
-function conf_manager:load_kv(path, kv_fn)
+-- 读取Key-Value型配置数据块
+-- @param path 配置数据文件路径，相当于执行require(string.format(路径规则, path))
+-- @param data_blocks 二进制数据
+-- @param kv_fn key提取规则函数function (索引, 配置项) return key列表，可以多个 end
+-- @param cfg_set_name 别名，通过pbc_config_manager:get(别名)查找配置，默认和path一样
+function conf_manager:load_kv(path, kv_fn, cfg_set_name)
     return self:load(path,
         function(cfg, rk, rv)
             if cfg:get_by_table(rk) then
@@ -118,11 +138,16 @@ function conf_manager:load_kv(path, kv_fn)
 
             table.insert(rk, rv)
             cfg:set_by_table(rk)
-        end, kv_fn
+        end, kv_fn, cfg_set_name
     )
 end
 
-function conf_manager:load_kl(path, kv_fn)
+-- 读取Key-List型配置数据块
+-- @param path 配置数据文件路径，相当于执行require(string.format(路径规则, path))
+-- @param data_blocks 二进制数据
+-- @param kv_fn key提取规则函数function (索引, 配置项) return key列表，可以多个 end
+-- @param cfg_set_name 别名，通过pbc_config_manager:get(别名)查找配置，默认和path一样
+function conf_manager:load_kl(path, kv_fn, cfg_set_name)
     return self:load(path,
         function(cfg, rk, rv)
             local ls = cfg:get_by_table(rk)
@@ -133,22 +158,30 @@ function conf_manager:load_kl(path, kv_fn)
                 table.insert(rk, ls)
                 cfg:set_by_table(rk)
             end
-        end, kv_fn
+        end, kv_fn, cfg_set_name
     )
 end
 
+-- 设置只读
+-- @note 实际上就是包装一层然后让__newindex报错,会影响pairs、ipairs等的使用
 function conf_manager:set_readonly()
     self.__data = class.set_readonly(self.__data)
 end
 
+-- 根据别名(路径)获取配置集合
+-- @param type_name 别名(路径)
+-- @return 配置集或nil
 function conf_manager:get(type_name)
     return self.__data[type_name] or nil
 end
 
+-- 重新加载配置并重新加载“列表加载文件”
 function conf_manager:reload()
     self.__data = {}
-    loader.remove(self.__list_path)
-    loader.load(self.__list_path)
+    if self.__list_path and #self.__list_path > 0 then
+        loader.remove(self.__list_path)
+        loader.load(self.__list_path)
+    end
 end
 
 return conf_manager

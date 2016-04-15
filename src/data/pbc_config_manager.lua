@@ -27,10 +27,12 @@ function conf_set:get_by_table(key)
     return ret
 end
 
+-- 数据集，通过key拉取配置数据
 function conf_set:get(...)
     return self:get_by_table({...})
 end
 
+-- 数据集，拉取所有配置数据
 function conf_set:get_all()
     return self.__data
 end
@@ -63,17 +65,30 @@ end
 local pbc_config_manager = class.register('data.pbc_config_manager', class.singleton)
 
 pbc_config_manager.__path_rule = '%s'
-pbc_config_manager.__list_path = 'data.conf_list'
+pbc_config_manager.__list_path = nil
 pbc_config_manager.__data = {}
 
+-- 设置路径规则
+-- @param rule 路径规则(一定要带一个%s)
+-- @note 当读取协议message类型为PROTO的配置时，实际查找的协议名称为string.format(rule, PROTO)
+--       比如protobuf的package名称是config,那么这里rule填 config.%s
 function pbc_config_manager:set_path_rule(rule)
     self.__path_rule = rule
 end
 
+-- 设置配置列表加载文件
+-- @param l 配置列表加载文件(一定要带一个%s)
+-- @note 当执行reload时，清空完原来的配置后后会重新加载 string.format(rule, PROTO)
 function pbc_config_manager:set_list(l)
     self.__list_path = l
 end
 
+-- 读取配置数据块
+-- @param path 配置协议名称
+-- @param data_blocks 二进制数据
+-- @param data_collector_fn 插入规则函数function (数据集, key, 配置项)
+-- @param kv_fn key提取规则函数function (索引, 配置项) return key列表，可以多个 end
+-- @param cfg_set_name 别名，通过pbc_config_manager:get(别名)查找配置，默认和path一样
 function pbc_config_manager:load_datablocks(path, data_blocks, data_collector_fn, kv_fn, cfg_set_name)
     cfg_set_name = cfg_set_name or path
     pbc_config_manager.__data[cfg_set_name] = pbc_config_manager.__data[cfg_set_name] or conf_set.new({__data = {}})
@@ -106,6 +121,11 @@ function pbc_config_manager:load_datablocks(path, data_blocks, data_collector_fn
     return true
 end
 
+-- 读取Key-Value型配置数据块
+-- @param path 配置协议名称
+-- @param data_blocks 二进制数据
+-- @param kv_fn key提取规则函数function (索引, 配置项) return key列表，可以多个 end
+-- @param cfg_set_name 别名，通过pbc_config_manager:get(别名)查找配置，默认和path一样
 function pbc_config_manager:load_buffer_kv(path, buffers, kv_fn, cfg_set_name)
     local msg, error_text = pbc.decode("com.owent.xresloader.pb.xresloader_datablocks", buffers)
     if false == msg then
@@ -130,6 +150,11 @@ function pbc_config_manager:load_buffer_kv(path, buffers, kv_fn, cfg_set_name)
     )
 end
 
+-- 读取Key-List型配置数据块
+-- @param path 配置协议名称
+-- @param data_blocks 二进制数据
+-- @param kv_fn key提取规则函数function (索引, 配置项) return key列表，可以多个 end
+-- @param cfg_set_name 别名，通过pbc_config_manager:get(别名)查找配置，默认和path一样
 function pbc_config_manager:load_buffer_kl(path, buffers, kv_fn, cfg_set_name)
     local msg, error_text = pbc.decode("com.owent.xresloader.pb.xresloader_datablocks", buffers)
     if false == msg then
@@ -151,19 +176,28 @@ function pbc_config_manager:load_buffer_kl(path, buffers, kv_fn, cfg_set_name)
     )
 end
 
+
+-- 设置只读
+-- @note 实际上就是包装一层然后让__newindex报错,会影响pairs、ipairs等的使用
 function pbc_config_manager:set_readonly()
     self.__data = class.set_readonly(self.__data)
 end
 
+-- 根据别名(路径)获取配置集合
+-- @param type_name 别名(路径)
+-- @return 配置集或nil
 function pbc_config_manager:get(type_name)
     return self.__data[type_name] or nil
 end
 
+-- 重新加载配置并重新加载“列表加载文件”
 function pbc_config_manager:reload()
     self.__data = {}
 
-    loader.remove(self.__list_path)
-    loader.load(self.__list_path)
+    if self.__list_path and #self.__list_path > 0 then
+        loader.remove(self.__list_path)
+        loader.load(self.__list_path)
+    end
 end
 
 return pbc_config_manager
