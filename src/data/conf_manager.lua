@@ -67,7 +67,7 @@ function conf_manager:set_path_rule(rule)
     self.__path_rule = rule
 end
 
-function pbc_config_manager:set_list(l)
+function conf_manager:set_list(l)
     self.__list_path = l
 end
 
