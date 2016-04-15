@@ -103,7 +103,12 @@ function conf_manager:load_kv(path, kv_fn)
     return self:load(path,
         function(cfg, rk, rv)
             if cfg:get_by_table(rk) then
-                log_warn('config [%s] already has key %s, old record will be covered', path, table.concat(rk, ', '))
+                for i = 1, #rk, 1 do
+                    if 0 ~= rk[i] and "" ~= rk[i] and nil ~= rk[i] then
+                        log_warn('config [%s] already has key %s, old record will be covered', path, table.concat(rk, ', '))
+                        break
+                    end
+                end
             end
 
             table.insert(rk, rv)

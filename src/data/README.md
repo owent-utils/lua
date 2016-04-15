@@ -1,6 +1,6 @@
-ÅäÖÃ¶ÁÈ¡Ä£¿é
+é…ç½®è¯»å–æ¨¡å—
 ======
 
-¿ÉÒÔ´îÅä [xresloader](https://github.com/owt5008137/xresloader) Ê¹ÓÃ
-Ê¾Àı¼û [https://github.com/owt5008137/xresloader/tree/master/sample/lua](https://github.com/owt5008137/xresloader/tree/master/sample/lua)
+å¯ä»¥æ­é… [xresloader](https://github.com/xresloader/xresloader) ä½¿ç”¨
+ç¤ºä¾‹è§ https://github.com/xresloader/xresloader/blob/master/sample/lua/sample_lua.lua
 
