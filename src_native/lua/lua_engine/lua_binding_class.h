@@ -85,21 +85,21 @@ namespace script {
              *
              * @return  The static class table.
              */
-            int getStaticClassTable() const { return class_table_; }
+            int get_static_class_table() const { return class_table_; }
 
             /**
              * 获取类成员的table
              *
              * @return  The static class table.
              */
-            int getMemberTable() const { return class_memtable_; }
+            int get_member_table() const { return class_memtable_; }
 
             /**
              * 获取UserData的映射关系MetaTable
              *
              * @return  The static class table.
              */
-            int getUserMetaTable() const { return class_metatable_; }
+            int get_user_meta_table() const { return class_metatable_; }
 
             lua_State *get_lua_state() { return lua_state_; }
 
@@ -112,7 +112,7 @@ namespace script {
             self_type &add_const(const char *const_name, Ty n) {
                 lua_State *state = get_lua_state();
                 int ret_num = detail::wraper_var<Ty>::wraper(state, n);
-                if (ret_num > 0) lua_setfield(state, getStaticClassTable(), const_name);
+                if (ret_num > 0) lua_setfield(state, get_static_class_table(), const_name);
 
                 return *this;
             }
@@ -126,7 +126,7 @@ namespace script {
                 lua_State *state = get_lua_state();
                 lua_pushstring(state, const_name);
                 lua_pushlstring(state, n, s);
-                lua_settable(state, getStaticClassTable());
+                lua_settable(state, get_static_class_table());
 
                 return *this;
             }
@@ -145,7 +145,7 @@ namespace script {
                 lua_pushstring(state, func_name);
                 lua_pushlightuserdata(state, reinterpret_cast<void *>(fn));
                 lua_pushcclosure(state, detail::unwraper_static_fn<R, TParam...>::LuaCFunction, 1);
-                lua_settable(state, getStaticClassTable());
+                lua_settable(state, get_static_class_table());
 
                 return (*this);
             }
@@ -169,7 +169,7 @@ namespace script {
 
                 lua_binding_placement_new_and_delete<fn_t>::create(state, fn);
                 lua_pushcclosure(state, detail::unwraper_functor_fn<R, TParam...>::LuaCFunction, 1);
-                lua_settable(state, getStaticClassTable());
+                lua_settable(state, get_static_class_table());
 
                 return (*this);
             }
@@ -197,7 +197,7 @@ namespace script {
                     return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(L, dynamic_cast<TClass *>(pobj.get()), fn);
                 };
                 lua_pushcclosure(state, __member_method_unwrapper, 1);
-                lua_settable(state, getMemberTable());
+                lua_settable(state, get_member_table());
 
                 return (*this);
             }
@@ -225,7 +225,7 @@ namespace script {
                     return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(L, dynamic_cast<TClass *>(pobj.get()), fn);
                 };
                 lua_pushcclosure(state, __member_method_unwrapper, 1);
-                lua_settable(state, getMemberTable());
+                lua_settable(state, get_member_table());
 
                 return (*this);
             }
@@ -235,11 +235,11 @@ namespace script {
              *
              * @return  The static class table.
              */
-            lua_binding_namespace &asNamespace() {
+            lua_binding_namespace &as_namespace() {
                 // 第一次获取时初始化
                 if (as_ns_.ns_.empty()) {
                     as_ns_.ns_ = owner_ns_.ns_;
-                    as_ns_.ns_.push_back(getLuaName());
+                    as_ns_.ns_.push_back(get_lua_name());
                     as_ns_.base_stack_top_ = 0;
                     as_ns_.this_ns_ = class_table_;
                 }
@@ -247,11 +247,11 @@ namespace script {
                 return as_ns_;
             }
 
-            const char *getLuaName() const { return lua_class_name_.c_str(); }
+            const char *get_lua_name() const { return lua_class_name_.c_str(); }
 
             static const char *get_lua_metatable_name() { return lua_binding_userdata_info<value_type>::get_lua_metatable_name(); }
 
-            self_type &setNew(lua_CFunction f, const std::string &method_name = "new") {
+            self_type &set_new(lua_CFunction f, const std::string &method_name = "new") {
                 lua_State *state = get_lua_state();
                 // new 方法
                 lua_pushstring(state, method_name.c_str());
@@ -264,7 +264,7 @@ namespace script {
             }
 
             template <typename... TParams>
-            self_type &setDefaultNew(const std::string &method_name = "new") {
+            self_type &set_default_new(const std::string &method_name = "new") {
                 typedef std::function<pointer_type(TParams && ...)> new_fn_t;
                 lua_State *L = get_lua_state();
 
@@ -273,7 +273,7 @@ namespace script {
                 return add_method<pointer_type, TParams &&...>(method_name.c_str(), fn);
             }
 
-            self_type &setToString(lua_CFunction f) {
+            self_type &set_to_string(lua_CFunction f) {
                 lua_State *state = get_lua_state();
                 // __tostring方法
                 lua_pushliteral(state, "__tostring");
@@ -285,7 +285,7 @@ namespace script {
                 return (*this);
             }
 
-            self_type &setGC(lua_CFunction f) {
+            self_type &set_gc(lua_CFunction f) {
                 lua_State *state = get_lua_state();
                 // 垃圾回收方法（注意函数内要判断排除table类型）
                 lua_pushliteral(state, "__gc");
@@ -325,7 +325,7 @@ namespace script {
 
                     // 注册类到namespace
                     // 注意__index留空
-                    lua_pushstring(state, getLuaName());
+                    lua_pushstring(state, get_lua_name());
                     lua_pushvalue(state, class_table_);
                     lua_settable(state, owner_ns_.get_namespace_table());
 
@@ -369,9 +369,9 @@ namespace script {
             }
 
             void finish_class() {
-                if (NULL == default_funcs_[FT_TOSTRING]) setToString(__tostring);
+                if (NULL == default_funcs_[FT_TOSTRING]) set_to_string(__tostring);
 
-                if (NULL == default_funcs_[FT_GC]) setGC(__lua_gc);
+                if (NULL == default_funcs_[FT_GC]) set_gc(__lua_gc);
             }
 
             //================ 以下方法皆为lua接口，并提供给C++层使用 ================

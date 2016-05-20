@@ -157,8 +157,8 @@ LUA_BIND_OBJECT(sample_class) {
     script::lua::lua_binding_class<sample_class> clazz("sample_class", "game.logic", L);
     // 使用默认的new方法
     // 尖括号中是构造函数的参数类型列表
-    // 如果要自定义new方法请使用setNew函数
-    clazz.setDefaultNew<>();
+    // 如果要自定义new方法请使用set_new函数
+    clazz.set_default_new<>();
 
 
     {
