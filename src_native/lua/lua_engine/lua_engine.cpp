@@ -124,10 +124,15 @@ namespace script {
             // get loader table
             lua_getglobal(L, "package");    /* L: package */
             lua_getfield(L, -1, "loaders"); /* L: package, loaders */
+            if (lua_isnil(L, -1)) {
+                lua_pop(L, 1);
+                lua_getfield(L, -1, "searchers"); /* L: package, searchers */
+            }
 
             // insert loader into index 2
             lua_pushcfunction(L, func); /* L: package, loaders, func */
-            for (int i = lua_objlen(L, -2) + 1; i > 2; --i) {
+            LUA_GET_TABLE_LEN(int len, L, -2);
+            for (int i = len + 1; i > 2; --i) {
                 lua_rawgeti(L, -2, i - 1); /* L: package, loaders, func, function */
                 // we call lua_rawgeti, so the loader table now is at -3
                 lua_rawseti(L, -3, i); /* L: package, loaders, func */
