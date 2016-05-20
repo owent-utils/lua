@@ -122,11 +122,20 @@ namespace script {
 
             // stack content after the invoking of the function
             // get loader table
-            lua_getglobal(L, "package");    /* L: package */
-            lua_getfield(L, -1, "loaders"); /* L: package, loaders */
+            lua_getglobal(L, "package"); /* L: package */
+            const char *loader_name = "loaders";
+            lua_getfield(L, -1, loader_name); /* L: package, loaders */
             if (lua_isnil(L, -1)) {
                 lua_pop(L, 1);
-                lua_getfield(L, -1, "searchers"); /* L: package, searchers */
+                loader_name = "searchers";
+                lua_getfield(L, -1, loader_name); /* L: package, searchers */
+            }
+
+            // error
+            if (lua_isnil(L, -1)) {
+                lua_pop(L, 2);
+                luaL_error(L, "package.loaders or package.searchers not found");
+                return;
             }
 
             // insert loader into index 2
@@ -140,7 +149,7 @@ namespace script {
             lua_rawseti(L, -2, 2); /* L: package, loaders */
 
             // set loaders into package
-            lua_setfield(L, -2, "loaders"); /* L: package */
+            lua_setfield(L, -2, loader_name); /* L: package */
 
             lua_pop(L, 1);
         }
