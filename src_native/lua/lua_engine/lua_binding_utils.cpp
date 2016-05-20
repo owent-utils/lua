@@ -199,7 +199,7 @@ namespace script {
                 int top = lua_gettop(L);
 
 #if LUA_VERSION_NUM >= 502
-                luaL_traceback(L, L, nullptr, 2);
+                luaL_traceback(L, L, NULL, 2);
 #else
                 lua_getglobal(L, "debug");
 

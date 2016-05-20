@@ -11,10 +11,10 @@ extern "C" {
 
 namespace script {
     namespace lua {
-        lua_binding_namespace::lua_binding_namespace() : lua_state_(nullptr), base_stack_top_(0), this_ns_(0) {}
+        lua_binding_namespace::lua_binding_namespace() : lua_state_(NULL), base_stack_top_(0), this_ns_(0) {}
 
         lua_binding_namespace::lua_binding_namespace(const char *namespace_, lua_State *L)
-            : lua_state_(nullptr), base_stack_top_(0), this_ns_(0) {
+            : lua_state_(NULL), base_stack_top_(0), this_ns_(0) {
             open(namespace_, L);
         }
 
@@ -29,7 +29,7 @@ namespace script {
 
         lua_binding_namespace::~lua_binding_namespace() { close(); }
 
-        lua_binding_namespace::lua_binding_namespace(lua_binding_namespace &ns) : lua_state_(nullptr), base_stack_top_(0), this_ns_(0) {
+        lua_binding_namespace::lua_binding_namespace(lua_binding_namespace &ns) : lua_state_(NULL), base_stack_top_(0), this_ns_(0) {
             (*this) = ns;
         }
 

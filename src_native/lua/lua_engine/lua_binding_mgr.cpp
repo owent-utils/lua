@@ -14,7 +14,7 @@ namespace script {
         lua_binding_mgr::~lua_binding_mgr() {}
 
         int lua_binding_mgr::init(lua_State *L) {
-            if (nullptr == L) {
+            if (NULL == L) {
                 return -1;
             }
 

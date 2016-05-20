@@ -16,7 +16,7 @@ extern "C" {
 
 namespace script {
     namespace lua {
-        extern int LuaProfile_openLib(lua_State *L);
+        extern int lua_profile_openlib(lua_State *L);
 
         lua_auto_stats::lua_auto_stats() { begin_clock_ = std::chrono::steady_clock::now(); }
 
@@ -26,30 +26,41 @@ namespace script {
             // lua_engine::instance()->add_lua_stat_time(abs(end_clock_ - begin_clock_) * 1.0f / CLOCKS_PER_SEC);
         }
 
-        lua_engine::lua_engine() : state_(NULL) {
+        lua_engine::lua_engine() : state_owner_(false), state_(NULL) {
             lua_update_stats_.lua_time = 0.0f;
             lua_update_stats_.run_time = 0.0f;
         }
 
 
-        lua_engine::~lua_engine() {}
+        lua_engine::~lua_engine() {
+            if (state_owner_) {
+                lua_close(state_);
+                state_owner_ = false;
+            }
+        }
 
-        int lua_engine::add_on_inited(std::function<void()> fn) {
+        int lua_engine::add_on_inited(std::function<void(lua_State *)> fn) {
             on_inited_.push_back(fn);
             return 0;
         }
 
         int lua_engine::init(lua_State *state) {
-            if (nullptr == state) {
+            if (NULL != state_ && state_owner_) {
+                lua_close(state_);
+                state_owner_ = false;
+            }
+
+            if (NULL == state) {
                 state_ = luaL_newstate();
                 luaL_openlibs(state_);
+                state_owner_ = true;
             } else {
                 state_ = state;
             }
 
             // add 3rdparty librarys
-            add_ext_lib(LuaProfile_openLib);
-            add_ext_lib(LuaTableExt_openLib);
+            // add_ext_lib(lua_profile_openlib);
+            // add_ext_lib(lua_table_ext_openlib);
             // add_ext_lib(luaopen_profiler);
             // add_ext_lib(luaopen_bit);
             // add_ext_lib(luaopen_pack);
@@ -58,8 +69,8 @@ namespace script {
             // add_ext_lib(luaopen_cjson);
             // add_ext_lib(luaopen_protobuf_c);
 
-            for (std::function<void()> &fn : on_inited_) {
-                fn();
+            for (std::function<void(lua_State *)> &fn : on_inited_) {
+                fn(state_);
             }
             on_inited_.clear();
             return 0;

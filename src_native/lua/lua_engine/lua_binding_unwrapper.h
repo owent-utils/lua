@@ -54,7 +54,7 @@ namespace script {
                 typedef lua_CFunction value_type;
 
                 static Tt unwraper(lua_State *L, int index) {
-                    if (lua_gettop(L) < index) return static_cast<Tt>(nullptr);
+                    if (lua_gettop(L) < index) return static_cast<Tt>(NULL);
 
                     return static_cast<Tt>(lua_tocfunction(L, index));
                 }
@@ -91,14 +91,14 @@ namespace script {
                 typedef Ty value_type;
 
                 static Tt unwraper(lua_State *L, int index) {
-                    if (lua_gettop(L) < index) return nullptr;
+                    if (lua_gettop(L) < index) return NULL;
 
                     if (lua_isnil(L, index)) {
-                        return nullptr;
+                        return NULL;
                     }
 
                     if (!lua_islightuserdata(L, index)) {
-                        return nullptr;
+                        return NULL;
                     }
 
                     return reinterpret_cast<Tt>(lua_topointer(L, index));
@@ -117,15 +117,15 @@ namespace script {
                     static_assert(std::is_pod<obj_t>::value, "custom type must be pod type");
 
                     if (lua_gettop(L) < index) {
-                        return static_cast<Tt>(nullptr); // nullptr static_cast from 'null_ptr' to 'unsigned long' is not allowed
+                        return static_cast<Tt>(0); // NULL static_cast from 'null_ptr' to 'unsigned long' is not allowed
                     }
                     if (lua_isnil(L, index)) {
-                        return static_cast<Tt>(nullptr); // nullptr static_cast from 'null_ptr' to 'unsigned long' is not allowed
+                        return static_cast<Tt>(0); // NULL static_cast from 'null_ptr' to 'unsigned long' is not allowed
                     }
 
                     obj_t *ptr = reinterpret_cast<obj_t *>(lua_touserdata(L, index));
-                    if (nullptr == ptr) {
-                        return static_cast<Tt>(nullptr); // nullptr static_cast from 'null_ptr' to 'unsigned long' is not allowed
+                    if (NULL == ptr) {
+                        return static_cast<Tt>(0); // NULL static_cast from 'null_ptr' to 'unsigned long' is not allowed
                     }
 
                     return static_cast<Tt>(*ptr);
@@ -180,9 +180,9 @@ namespace script {
             template <typename... Ty>
             struct unwraper_var<const char *, Ty...> {
                 static const char *unwraper(lua_State *L, int index) {
-                    if (lua_gettop(L) < index) return static_cast<const char *>(nullptr);
+                    if (lua_gettop(L) < index) return static_cast<const char *>(NULL);
 
-                    LUA_CHECK_TYPE_AND_RET(string, L, index, nullptr);
+                    LUA_CHECK_TYPE_AND_RET(string, L, index, NULL);
 
                     return lua_tostring(L, index);
                 }
@@ -191,9 +191,9 @@ namespace script {
             template <typename... Ty>
             struct unwraper_var<char *, Ty...> {
                 static char *unwraper(lua_State *L, int index) {
-                    if (lua_gettop(L) < index) return static_cast<char *>(nullptr);
+                    if (lua_gettop(L) < index) return static_cast<char *>(NULL);
 
-                    LUA_CHECK_TYPE_AND_RET(string, L, index, nullptr);
+                    LUA_CHECK_TYPE_AND_RET(string, L, index, NULL);
 
                     return const_cast<char *>(lua_tostring(L, index));
                 }
@@ -202,7 +202,7 @@ namespace script {
             template <typename... Ty>
             struct unwraper_var< ::script::lua::string_buffer, Ty...> {
                 static ::script::lua::string_buffer unwraper(lua_State *L, int index) {
-                    ::script::lua::string_buffer ret(nullptr, 0);
+                    ::script::lua::string_buffer ret(NULL, 0);
 
                     LUA_CHECK_TYPE_AND_RET(string, L, index, ret);
 
@@ -221,7 +221,7 @@ namespace script {
                     const char *class_name = lua_binding_userdata_info<TC>::get_lua_metatable_name();
                     ud_t *watcher = static_cast<ud_t *>(luaL_checkudata(L, index, class_name));
 
-                    if (nullptr == watcher) {
+                    if (NULL == watcher) {
                         return std::shared_ptr<TC>();
                     }
 
@@ -240,7 +240,7 @@ namespace script {
                     const char *class_name = lua_binding_userdata_info<TC>::get_lua_metatable_name();
                     ud_t *watcher = static_cast<ud_t *>(luaL_checkudata(L, index, class_name));
 
-                    if (nullptr == watcher) {
+                    if (NULL == watcher) {
                         return std::weak_ptr<TC>();
                     }
 
@@ -555,7 +555,7 @@ namespace script {
                 // 动态参数个数
                 static int LuaCFunction(lua_State *L) {
                     value_type fn = reinterpret_cast<value_type>(lua_touserdata(L, lua_upvalueindex(1)));
-                    if (nullptr == fn) {
+                    if (NULL == fn) {
                         // 找不到函数
                         return 0;
                     }
@@ -578,7 +578,7 @@ namespace script {
                 // 动态参数个数
                 static int LuaCFunction(lua_State *L) {
                     value_type *fn = reinterpret_cast<value_type *>(lua_touserdata(L, lua_upvalueindex(1)));
-                    if (nullptr == fn) {
+                    if (NULL == fn) {
                         // 找不到函数
                         return 0;
                     }

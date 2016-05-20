@@ -12,7 +12,7 @@
 namespace script {
     namespace lua {
 
-        static int LuaTimeExt_now_ms(lua_State *L) {
+        static int lua_time_ext_now_ms(lua_State *L) {
             std::chrono::milliseconds now_ms =
                 std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 
@@ -30,7 +30,7 @@ namespace script {
             return 1;
         }
 
-        static int LuaTimeExt_now_us(lua_State *L) {
+        static int lua_time_ext_now_us(lua_State *L) {
             std::chrono::microseconds now_ms =
                 std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
 
@@ -48,10 +48,10 @@ namespace script {
             return 1;
         }
 
-        int LuaTimeExt_openLib(lua_State *L) {
+        int lua_time_ext_openlib(lua_State *L) {
             int top = lua_gettop(L);
 
-            luaL_Reg lib_funcs[] = {{"now_ms", LuaTimeExt_now_ms}, {"now_us", LuaTimeExt_now_us}, {nullptr, nullptr}};
+            luaL_Reg lib_funcs[] = {{"now_ms", lua_time_ext_now_ms}, {"now_us", lua_time_ext_now_us}, {NULL, NULL}};
 
 #if LUA_VERSION_NUM <= 501
             luaL_register(L, "time_ext", lib_funcs);

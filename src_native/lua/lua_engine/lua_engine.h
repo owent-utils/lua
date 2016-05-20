@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Utils/design_pattern/singleton.h"
+#include "design_pattern/singleton.h"
 #include <assert.h>
 #include <chrono>
 #include <ctime>
@@ -37,9 +37,9 @@ namespace script {
 
 
         public:
-            int add_on_inited(std::function<void()> fn);
+            int add_on_inited(std::function<void(lua_State *)> fn);
 
-            int init(lua_State *state = nullptr);
+            int init(lua_State *state = NULL);
 
             void add_ext_lib(lua_CFunction regfunc);
 
@@ -133,8 +133,9 @@ namespace script {
             };
 
 
+            bool state_owner_;
             lua_State *state_;
-            std::list<std::function<void()> > on_inited_;
+            std::list<std::function<void(lua_State *)> > on_inited_;
 
             lua_stats lua_update_stats_;
         };

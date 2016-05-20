@@ -17,9 +17,9 @@ extern "C" {
 namespace script {
     namespace lua {
 
-        int LuaProfile_openLib(lua_State *L);
+        int lua_profile_openlib(lua_State *L);
 
-        struct LuaProfilePairHash {
+        struct lua_profile_pair_hash {
         public:
             template <typename T, typename U>
             std::size_t operator()(const std::pair<T, U> &x) const {
@@ -35,7 +35,7 @@ namespace script {
             }
         };
 
-        struct LuaProfileStatData {
+        struct lua_profile_stat_data {
             typedef std::chrono::steady_clock clock_t;
 
             std::string source; // 源码/文件
@@ -50,11 +50,11 @@ namespace script {
             void reset();
         };
 
-        struct LuaProfileStackData {
-            typedef LuaProfileStatData::clock_t clock_t;
+        struct lua_profile_stack_data {
+            typedef lua_profile_stat_data::clock_t clock_t;
             typedef std::pair<std::string, int> prof_key_t;
-            typedef std::shared_ptr<LuaProfileStackData> stack_ptr_t;
-            typedef std::unordered_map<prof_key_t, stack_ptr_t, LuaProfilePairHash> map_t;
+            typedef std::shared_ptr<lua_profile_stack_data> stack_ptr_t;
+            typedef std::unordered_map<prof_key_t, stack_ptr_t, lua_profile_pair_hash> map_t;
 
             std::string source; // 源码/文件
             int line_number;    // 起始位置
@@ -66,7 +66,7 @@ namespace script {
             clock_t::duration call_native_duration; // 调用本地调用时钟周期
 
             map_t children;
-            std::weak_ptr<LuaProfileStackData> parent;
+            std::weak_ptr<lua_profile_stack_data> parent;
 
             static stack_ptr_t make(const prof_key_t &key);
 
@@ -75,10 +75,10 @@ namespace script {
             static stack_ptr_t exit_fn(stack_ptr_t &self);
         };
 
-        struct LuaProfileCallData {
-            typedef LuaProfileStackData::prof_key_t prof_key_t;
-            typedef LuaProfileStatData::clock_t clock_t;
-            typedef std::shared_ptr<LuaProfileStatData> stats_ptr;
+        struct lua_profile_call_data {
+            typedef lua_profile_stack_data::prof_key_t prof_key_t;
+            typedef lua_profile_stat_data::clock_t clock_t;
+            typedef std::shared_ptr<lua_profile_stat_data> stats_ptr;
 
             //
             stats_ptr call_stats;
@@ -93,12 +93,12 @@ namespace script {
             prof_key_t key;
         };
 
-        class lua_profile : public Singleton<lua_profile> {
+        class lua_profile : public util::design_pattern::singleton<lua_profile> {
         public:
-            typedef LuaProfileCallData::prof_key_t prof_key_t;
-            typedef LuaProfileCallData::stats_ptr prof_ptr;
-            typedef LuaProfileStatData::clock_t clock_t;
-            typedef std::unordered_map<prof_key_t, prof_ptr, LuaProfilePairHash> map_t;
+            typedef lua_profile_call_data::prof_key_t prof_key_t;
+            typedef lua_profile_call_data::stats_ptr prof_ptr;
+            typedef lua_profile_stat_data::clock_t clock_t;
+            typedef std::unordered_map<prof_key_t, prof_ptr, lua_profile_pair_hash> map_t;
 
         protected:
             lua_profile();
@@ -115,23 +115,23 @@ namespace script {
             void enable();
             void disable();
 
-            void enableNativeProf();
-            void disableNativeProf();
+            void enable_native_prof();
+            void disable_native_prof();
 
             std::string dump_to(const std::string &file_path);
 
             std::string dump();
 
-            size_t push_fn(LuaProfileStackData::stack_ptr_t ptr);
+            size_t push_fn(lua_profile_stack_data::stack_ptr_t ptr);
             void pop_fn(size_t p);
 
         private:
             static void Hook_Fn(lua_State *L, lua_Debug *ar);
 
-            LuaProfileCallData &enter_lua_func(const prof_key_t &key);
+            lua_profile_call_data &enter_lua_func(const prof_key_t &key);
             void exit_lua_func(const prof_key_t &key);
 
-            LuaProfileCallData &enter_native_func(const prof_key_t &key);
+            lua_profile_call_data &enter_native_func(const prof_key_t &key);
             void exit_native_func(const prof_key_t &key);
 
         private:
@@ -141,10 +141,10 @@ namespace script {
             lua_Hook origin_hook_;
             int origin_mask_;
 
-            std::vector<LuaProfileCallData> call_stack_; // 调用栈
+            std::vector<lua_profile_call_data> call_stack_; // 调用栈
             map_t call_stats_;
 
-            std::vector<LuaProfileStackData::stack_ptr_t> call_fn_prof_list_;
+            std::vector<lua_profile_stack_data::stack_ptr_t> call_fn_prof_list_;
         };
     }
 }

@@ -41,7 +41,7 @@ namespace script {
                                            public util::design_pattern::singleton<lua_binding_class_mgr_inst<TC> > {
         public:
             virtual int proc(lua_State *L) CLASS_OVERRIDE {
-                if (nullptr == L) {
+                if (NULL == L) {
                     cache_maps_.clear();
                     return 0;
                 }
@@ -57,7 +57,7 @@ namespace script {
             }
 
             bool add_ref(lua_State *L, const std::shared_ptr<TC> &ptr) {
-                if (nullptr == L) {
+                if (NULL == L) {
                     return false;
                 }
 
@@ -95,7 +95,7 @@ namespace script {
              * 自动更新/清理入口
              * @param 指定要清理的lua虚拟机，不指定为清理全部
              */
-            int proc(lua_State *L = nullptr);
+            int proc(lua_State *L = NULL);
 
             void add_bind(func_type fn);
 

@@ -120,7 +120,7 @@ namespace script {
 
                 auto obj =
                     static_cast<value_type *>(luaL_checkudata(L, 1, lua_binding_userdata_info<value_type>::get_lua_metatable_name()));
-                if (nullptr == obj) {
+                if (NULL == obj) {
                     WLOGERROR("try to convert userdata to %s but failed", lua_binding_userdata_info<value_type>::get_lua_metatable_name());
                     return 0;
                 }

@@ -10,7 +10,7 @@ extern "C" {
 
 namespace script {
     namespace lua {
-        int LuaTableExt_openLib(lua_State *L);
+        int lua_table_ext_openlib(lua_State *L);
     }
 }
 

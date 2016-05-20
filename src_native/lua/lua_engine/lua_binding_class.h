@@ -57,7 +57,7 @@ namespace script {
                 : lua_state_(L), lua_class_name_(lua_name), owner_ns_(namespace_, L) {
                 register_class();
 
-                for (int i = 0; i < FT_MAX) {
+                for (int i = 0; i < FT_MAX; ++i) {
                     default_funcs_[i] = NULL;
                 }
             }
@@ -369,9 +369,9 @@ namespace script {
             }
 
             void finish_class() {
-                if (nullptr == default_funcs_[FT_TOSTRING]) setToString(__tostring);
+                if (NULL == default_funcs_[FT_TOSTRING]) setToString(__tostring);
 
-                if (nullptr == default_funcs_[FT_GC]) setGC(__lua_gc);
+                if (NULL == default_funcs_[FT_GC]) setGC(__lua_gc);
             }
 
             //================ 以下方法皆为lua接口，并提供给C++层使用 ================
@@ -484,7 +484,7 @@ namespace script {
 
             static int __member_method_unwrapper(lua_State *L) {
                 member_proxy_method_t *fn = reinterpret_cast<member_proxy_method_t *>(lua_touserdata(L, lua_upvalueindex(1)));
-                if (nullptr == fn) {
+                if (NULL == fn) {
                     WLOGERROR("lua try to call member method in class %s but fn not set.\n", get_lua_metatable_name());
                     fn::print_traceback(L, "");
                     return 0;
@@ -493,7 +493,7 @@ namespace script {
                 const char *class_name = get_lua_metatable_name();
                 userdata_ptr_type pobj = static_cast<userdata_ptr_type>(luaL_checkudata(L, 1, class_name)); // get 'self'
 
-                if (nullptr == pobj) {
+                if (NULL == pobj) {
                     WLOGERROR("lua try to call %s's member method but self not set or type error.\n", class_name);
                     fn::print_traceback(L, "");
                     return 0;
@@ -503,7 +503,7 @@ namespace script {
                 lua_remove(L, 1);
 
                 if (!obj_ptr) {
-                    WLOGERROR("lua try to call %s's member method but this=nullptr.\n", class_name);
+                    WLOGERROR("lua try to call %s's member method but this=NULL.\n", class_name);
                     fn::print_traceback(L, "");
                     return 0;
                 }
