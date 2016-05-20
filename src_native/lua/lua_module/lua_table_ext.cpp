@@ -1,19 +1,17 @@
 ﻿#include <cstdlib>
-#include <list>
 #include <assert.h>
-#include <unordered_set>
 #include <cmath>
-#include <sstream>
 #include <fstream>
+#include <list>
+#include <sstream>
+#include <unordered_set>
 
-#include "LuaTableExt.h"
-#include "LuaAdaptor.h"
+#include "lua_adaptor.h"
+#include "lua_table_ext.h"
 
 
-namespace script
-{
-    namespace lua
-    {
+namespace script {
+    namespace lua {
         /**
          * 复制metatable
          * @param L lua state
@@ -31,8 +29,7 @@ namespace script
 
             // 重设metatable
             int res = lua_getmetatable(L, base_index);
-            if (0 == res)
-                return;
+            if (0 == res) return;
 
             if (LUA_EQUAL(L, base_index, -1)) {
                 lua_pushvalue(L, index);
@@ -53,17 +50,15 @@ namespace script
             int ret_index = lua_gettop(L);
 
             // 相对位置转绝对位置
-            if (ext_begin < 0)
-                ext_begin = ret_index + ext_begin;
+            if (ext_begin < 0) ext_begin = ret_index + ext_begin;
 
             // 相对位置转绝对位置
-            if (ext_end < 0)
-                ext_end = ret_index + ext_end;
+            if (ext_end < 0) ext_end = ret_index + ext_end;
 
             int merge_index = ext_end;
             while (merge_index >= ext_begin) {
                 /* table is in the stack at index 't' */
-                lua_pushnil(L);  /* first key */
+                lua_pushnil(L); /* first key */
                 while (lua_next(L, merge_index) != 0) {
                     if (lua_isnumber(L, -2)) {
                         arr_keys.insert(lua_tointeger(L, -2));
@@ -102,9 +97,7 @@ namespace script
             return 1;
         }
 
-        static int LuaTableExt_extend(lua_State *L) {
-            return LuaTableExt_extendTable(L, 1, lua_gettop(L), 0, 0);
-        }
+        static int LuaTableExt_extend(lua_State *L) { return LuaTableExt_extendTable(L, 1, lua_gettop(L), 0, 0); }
 
         static int LuaTableExt_cloneTable(lua_State *L, int index, int anarr = 0, int anrec = 0) {
             std::unordered_set<std::string> rec_keys;
@@ -121,7 +114,7 @@ namespace script
 
             {
                 /* table is in the stack at index 't' */
-                lua_pushnil(L);  /* first key */
+                lua_pushnil(L); /* first key */
                 while (lua_next(L, index) != 0) {
                     if (lua_isnumber(L, -2)) {
                         arr_keys.insert(lua_tointeger(L, -2));
@@ -140,7 +133,6 @@ namespace script
 
                     lua_pushvalue(L, -2);
                 }
-
             }
 
             int kv_top = lua_gettop(L);
@@ -207,7 +199,7 @@ namespace script
             } else {
                 lua_createtable(L, narr, nrec);
             }
-            
+
             return 1;
         }
 
@@ -220,17 +212,15 @@ namespace script
             int ret_index = lua_gettop(L);
 
             // 相对位置转绝对位置
-            if (ext_begin < 0)
-                ext_begin = ret_index + ext_begin;
+            if (ext_begin < 0) ext_begin = ret_index + ext_begin;
 
             // 相对位置转绝对位置
-            if (ext_end < 0)
-                ext_end = ret_index + ext_end;
+            if (ext_end < 0) ext_end = ret_index + ext_end;
 
             int merge_index = ext_end;
             while (merge_index >= ext_begin) {
                 /* table is in the stack at index 't' */
-                lua_pushnil(L);  /* first key */
+                lua_pushnil(L); /* first key */
                 while (lua_next(L, merge_index) != 0) {
                     if (lua_isnumber(L, -2)) {
                         arr_keys.insert(lua_tointeger(L, -2));
@@ -285,9 +275,7 @@ namespace script
             return 1;
         }
 
-        static int LuaTableExt_extend_r(lua_State *L) {
-            return LuaTableExt_extendTableRecursive(L, 1, lua_gettop(L), 0, 0);
-        }
+        static int LuaTableExt_extend_r(lua_State *L) { return LuaTableExt_extendTableRecursive(L, 1, lua_gettop(L), 0, 0); }
 
         int LuaTableExt_openLib(lua_State *L) {
             lua_getglobal(L, "table");

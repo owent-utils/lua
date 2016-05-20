@@ -1,5 +1,13 @@
 # OWenT’s Utils - Lua 本地代码拓展
-**目前处于整理阶段，可能会用到 [C&Cpp分支](https://github.com/owt5008137/OWenT-s-Utils/tree/C%26CPP)内的东西**
 
+依赖 https://github.com/atframework/atframe_utils 中的
++ [include/std](https://github.com/atframework/atframe_utils/tree/master/include/std) 目录
++ [include/design_pattern/singleton.h](https://github.com/atframework/atframe_utils/blob/master/include/design_pattern/singleton.h)
++ [include/design_pattern/noncopyable.h](https://github.com/atframework/atframe_utils/blob/master/include/design_pattern/noncopyable.h)
++ [include/lock](https://github.com/atframework/atframe_utils/tree/master/include/lock) 目录
+
+全部都是头文件依赖，所以如果项目中没有使用[atframe_utils](https://github.com/atframework/atframe_utils)的话，只要下载来头文件即可
 
 有任何意见或建议请 [mailto:owt5008137@live.com](mailto:owt5008137@live.com) 或 [mailto:admin@owent.net](mailto:admin@owent.net)
+
+[sample](sample)里是示例代码，lua 5.1， 5.2， 5.3 都可以

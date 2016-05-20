@@ -1,24 +1,23 @@
 ﻿#include <cstdlib>
-#include <list>
 #include <assert.h>
 #include <chrono>
-#include <numeric>
 #include <cstdio>
+#include <list>
+#include <numeric>
 
-#include "LuaTimeExt.h"
-#include "LuaAdaptor.h"
+#include "lua_adaptor.h"
+#include "lua_time_ext.h"
 
 
-namespace script
-{
-    namespace lua
-    {
+namespace script {
+    namespace lua {
 
         static int LuaTimeExt_now_ms(lua_State *L) {
-            std::chrono::milliseconds now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+            std::chrono::milliseconds now_ms =
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 
             if (static_cast<std::chrono::milliseconds>(std::numeric_limits<lua_Integer>::max()) < now_ms) {
-                char n[32] = { 0 };
+                char n[32] = {0};
                 sprintf(n, "%lld", static_cast<long long>(now_ms.count()));
 
                 lua_getglobal(L, "tonumber");
@@ -32,10 +31,11 @@ namespace script
         }
 
         static int LuaTimeExt_now_us(lua_State *L) {
-            std::chrono::microseconds now_ms = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+            std::chrono::microseconds now_ms =
+                std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
 
             if (static_cast<std::chrono::microseconds>(std::numeric_limits<lua_Integer>::max()) < now_ms) {
-                char n[32] = { 0 };
+                char n[32] = {0};
                 sprintf(n, "%lld", static_cast<long long>(now_ms.count()));
 
                 lua_getglobal(L, "tonumber");
@@ -51,13 +51,9 @@ namespace script
         int LuaTimeExt_openLib(lua_State *L) {
             int top = lua_gettop(L);
 
-            luaL_Reg lib_funcs[] = {
-                { "now_ms", LuaTimeExt_now_ms },
-                { "now_us", LuaTimeExt_now_us },
-                { nullptr, nullptr }
-            };
+            luaL_Reg lib_funcs[] = {{"now_ms", LuaTimeExt_now_ms}, {"now_us", LuaTimeExt_now_us}, {nullptr, nullptr}};
 
-#if LUA_VERSION_NUM <= 501 
+#if LUA_VERSION_NUM <= 501
             luaL_register(L, "time_ext", lib_funcs);
 #else
             luaL_newlib(L, lib_funcs);

@@ -1,21 +1,24 @@
-﻿#pragma once
+#ifndef _SCRIPT_LUA_LUABINDINGCLASS_
+#define _SCRIPT_LUA_LUABINDINGCLASS_
+
+#pragma once
 
 #include <assert.h>
-#include <string>
-#include <sstream>
 #include <cstdio>
-#include <list>
 #include <functional>
+#include <list>
+#include <sstream>
+#include <string>
 #include <type_traits>
 #include <typeinfo>
 
 #include <std/explicit_declare.h>
 
-#include "LuaBindingNamespace.h"
-#include "LuaBindingUnwrapper.h"
-#include "LuaBindingWrapper.h"
-#include "LuaBindingUtils.h"
-#include "LuaBindingMgr.h"
+#include "lua_binding_mgr.h"
+#include "lua_binding_namespace.h"
+#include "lua_binding_unwrapper.h"
+#include "lua_binding_utils.h"
+#include "lua_binding_wrapper.h"
 
 namespace script {
     namespace lua {
@@ -26,17 +29,17 @@ namespace script {
          * @author  owent
          * @date    2014/10/25
          */
-        template<typename TC, typename TProxy = TC>
-        class LuaBindingClass {
+        template <typename TC, typename TProxy = TC>
+        class lua_binding_class {
         public:
             typedef TC value_type;
             typedef TProxy proxy_type;
-            typedef LuaBindingClass<value_type, proxy_type> self_type;
-            typedef LuaBindingNamespace::static_method static_method;
-            typedef typename LuaBindingUserdataInfo<value_type>::userdata_type userdata_type;
-            typedef typename LuaBindingUserdataInfo<proxy_type>::pointer_type pointer_type;
-            typedef typename LuaBindingUserdataInfo<proxy_type>::userdata_ptr_type userdata_ptr_type;
-            typedef std::function<int(lua_State*, pointer_type)> member_proxy_method_t;
+            typedef lua_binding_class<value_type, proxy_type> self_type;
+            typedef lua_binding_namespace::static_method static_method;
+            typedef typename lua_binding_userdata_info<value_type>::userdata_type userdata_type;
+            typedef typename lua_binding_userdata_info<proxy_type>::pointer_type pointer_type;
+            typedef typename lua_binding_userdata_info<proxy_type>::userdata_ptr_type userdata_ptr_type;
+            typedef std::function<int(lua_State *, pointer_type)> member_proxy_method_t;
 
 
             enum FUNC_TYPE {
@@ -45,26 +48,27 @@ namespace script {
                 FT_TOSTRING,
                 FT_MAX,
             };
+
         private:
             lua_CFunction default_funcs_[FT_MAX];
 
         public:
-            LuaBindingClass(const char* lua_name, const char* namespace_, lua_State* L) : lua_state_(L), lua_class_name_(lua_name), owner_ns_(namespace_, L){
+            lua_binding_class(const char *lua_name, const char *namespace_, lua_State *L)
+                : lua_state_(L), lua_class_name_(lua_name), owner_ns_(namespace_, L) {
                 register_class();
-                
+
                 for (int i = 0; i < FT_MAX) {
                     default_funcs_[i] = NULL;
                 }
             }
 
-            LuaBindingClass(const char* lua_name, LuaBindingNamespace& ns) : lua_state_(ns.getLuaState()), lua_class_name_(lua_name), owner_ns_(ns){
+            lua_binding_class(const char *lua_name, lua_binding_namespace &ns)
+                : lua_state_(ns.get_lua_state()), lua_class_name_(lua_name), owner_ns_(ns) {
                 register_class();
                 memset(default_funcs_, NULL, sizeof(default_funcs_));
             }
 
-            ~LuaBindingClass() {
-                finish_class();
-            }
+            ~lua_binding_class() { finish_class(); }
 
             /**
              * Gets the owner namespace.
@@ -72,13 +76,9 @@ namespace script {
              * @return  The owner namespace.
              */
 
-            LuaBindingNamespace& getOwnerNamespace() {
-                return owner_ns_;
-            }
+            lua_binding_namespace &get_owner_namespace() { return owner_ns_; }
 
-            const LuaBindingNamespace& getOwnerNamespace() const {
-                return owner_ns_;
-            }
+            const lua_binding_namespace &get_owner_namespace() const { return owner_ns_; }
 
             /**
              * 获取静态class的table
@@ -101,21 +101,18 @@ namespace script {
              */
             int getUserMetaTable() const { return class_metatable_; }
 
-            lua_State* getLuaState() {
-                return lua_state_;
-            }
+            lua_State *get_lua_state() { return lua_state_; }
 
             /**
              * 添加常量(自动类型推断)
              *
              * @return  self.
              */
-            template<typename Ty>
-            self_type& addConst(const char* const_name, Ty n) {
-                lua_State* state = getLuaState();
+            template <typename Ty>
+            self_type &add_const(const char *const_name, Ty n) {
+                lua_State *state = get_lua_state();
                 int ret_num = detail::wraper_var<Ty>::wraper(state, n);
-                if (ret_num > 0)
-                    lua_setfield(state, getStaticClassTable(), const_name);
+                if (ret_num > 0) lua_setfield(state, getStaticClassTable(), const_name);
 
                 return *this;
             }
@@ -125,8 +122,8 @@ namespace script {
              *
              * @return  self.
              */
-            self_type& addConst(const char* const_name, const char* n, size_t s) {
-                lua_State* state = getLuaState();
+            self_type &add_const(const char *const_name, const char *n, size_t s) {
+                lua_State *state = get_lua_state();
                 lua_pushstring(state, const_name);
                 lua_pushlstring(state, n, s);
                 lua_settable(state, getStaticClassTable());
@@ -142,11 +139,11 @@ namespace script {
              * @param   func_name   Name of the function.
              * @param   fn          The function.
              */
-            template<typename R, typename... TParam>
-            self_type& addMethod(const char* func_name, R(*fn)(TParam... param)) {
-                lua_State* state = getLuaState();
+            template <typename R, typename... TParam>
+            self_type &add_method(const char *func_name, R (*fn)(TParam... param)) {
+                lua_State *state = get_lua_state();
                 lua_pushstring(state, func_name);
-                lua_pushlightuserdata(state, reinterpret_cast<void*>(fn));
+                lua_pushlightuserdata(state, reinterpret_cast<void *>(fn));
                 lua_pushcclosure(state, detail::unwraper_static_fn<R, TParam...>::LuaCFunction, 1);
                 lua_settable(state, getStaticClassTable());
 
@@ -163,14 +160,14 @@ namespace script {
              *
              * @return  A self_type&amp;
              */
-            template<typename R, typename... TParam>
-            self_type& addMethod(const char* func_name, std::function<R(TParam...)> fn) {
+            template <typename R, typename... TParam>
+            self_type &add_method(const char *func_name, std::function<R(TParam...)> fn) {
                 typedef std::function<R(TParam...)> fn_t;
 
-                lua_State* state = getLuaState();
+                lua_State *state = get_lua_state();
                 lua_pushstring(state, func_name);
 
-                LuaBindingPlacementNewAndDelete<fn_t>::create(state, fn);
+                lua_binding_placement_new_and_delete<fn_t>::create(state, fn);
                 lua_pushcclosure(state, detail::unwraper_functor_fn<R, TParam...>::LuaCFunction, 1);
                 lua_settable(state, getStaticClassTable());
 
@@ -187,21 +184,17 @@ namespace script {
              *
              * @return  A self_type&amp;
              */
-            template<typename R, typename TClass,typename... TParam>
-            self_type& addMethod(const char* func_name, R(TClass::*fn)(TParam... param)) {
-                typedef R(TClass::*fn_t)(TParam...);
-                static_assert(std::is_convertible<value_type*, TClass*>::value, "class of member method invalid");
+            template <typename R, typename TClass, typename... TParam>
+            self_type &add_method(const char *func_name, R (TClass::*fn)(TParam... param)) {
+                typedef R (TClass::*fn_t)(TParam...);
+                static_assert(std::is_convertible<value_type *, TClass *>::value, "class of member method invalid");
 
-                lua_State* state = getLuaState();
+                lua_State *state = get_lua_state();
                 lua_pushstring(state, func_name);
 
-                member_proxy_method_t* fn_ptr = LuaBindingPlacementNewAndDelete<member_proxy_method_t>::create(state);
-                *fn_ptr = [fn](lua_State* L, pointer_type pobj){
-                    return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(
-                        L, 
-                        dynamic_cast<TClass*>(pobj.get()),
-                        fn
-                    );
+                member_proxy_method_t *fn_ptr = lua_binding_placement_new_and_delete<member_proxy_method_t>::create(state);
+                *fn_ptr = [fn](lua_State *L, pointer_type pobj) {
+                    return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(L, dynamic_cast<TClass *>(pobj.get()), fn);
                 };
                 lua_pushcclosure(state, __member_method_unwrapper, 1);
                 lua_settable(state, getMemberTable());
@@ -219,21 +212,17 @@ namespace script {
              *
              * @return  A self_type&amp;
              */
-            template<typename R, typename TClass, typename... TParam>
-            self_type& addMethod(const char* func_name, R(TClass::*fn)(TParam... param) const) {
-                typedef R(TClass::*fn_t)(TParam...);
-                static_assert(std::is_convertible<value_type*, TClass*>::value, "class of member method invalid");
+            template <typename R, typename TClass, typename... TParam>
+            self_type &add_method(const char *func_name, R (TClass::*fn)(TParam... param) const) {
+                typedef R (TClass::*fn_t)(TParam...);
+                static_assert(std::is_convertible<value_type *, TClass *>::value, "class of member method invalid");
 
-                lua_State* state = getLuaState();
+                lua_State *state = get_lua_state();
                 lua_pushstring(state, func_name);
 
-                member_proxy_method_t* fn_ptr = LuaBindingPlacementNewAndDelete<member_proxy_method_t>::create(state);
-                *fn_ptr = [fn](lua_State* L, pointer_type pobj){
-                    return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(
-                        L, 
-                        dynamic_cast<TClass*>(pobj.get()),
-                        fn
-                    );
+                member_proxy_method_t *fn_ptr = lua_binding_placement_new_and_delete<member_proxy_method_t>::create(state);
+                *fn_ptr = [fn](lua_State *L, pointer_type pobj) {
+                    return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(L, dynamic_cast<TClass *>(pobj.get()), fn);
                 };
                 lua_pushcclosure(state, __member_method_unwrapper, 1);
                 lua_settable(state, getMemberTable());
@@ -242,11 +231,11 @@ namespace script {
             }
 
             /**
-             * 转换为namespace，注意有效作用域是返回的LuaBindingNamespace和这个Class的子集
+             * 转换为namespace，注意有效作用域是返回的lua_binding_namespace和这个Class的子集
              *
              * @return  The static class table.
              */
-            LuaBindingNamespace& asNamespace() {
+            lua_binding_namespace &asNamespace() {
                 // 第一次获取时初始化
                 if (as_ns_.ns_.empty()) {
                     as_ns_.ns_ = owner_ns_.ns_;
@@ -254,16 +243,16 @@ namespace script {
                     as_ns_.base_stack_top_ = 0;
                     as_ns_.this_ns_ = class_table_;
                 }
-                
+
                 return as_ns_;
             }
 
-            const char* getLuaName() const { return lua_class_name_.c_str(); }
+            const char *getLuaName() const { return lua_class_name_.c_str(); }
 
-            static const char* getLuaMetaTableName() { return LuaBindingUserdataInfo<value_type>::getLuaMetaTableName(); }
+            static const char *get_lua_metatable_name() { return lua_binding_userdata_info<value_type>::get_lua_metatable_name(); }
 
-            self_type& setNew(lua_CFunction f, const std::string& method_name = "new") {
-                lua_State* state = getLuaState();
+            self_type &setNew(lua_CFunction f, const std::string &method_name = "new") {
+                lua_State *state = get_lua_state();
                 // new 方法
                 lua_pushstring(state, method_name.c_str());
                 lua_pushcfunction(state, f);
@@ -274,20 +263,18 @@ namespace script {
                 return (*this);
             }
 
-            template<typename... TParams>
-            self_type& setDefaultNew(const std::string& method_name = "new") {
-                typedef std::function<pointer_type(TParams&&...)> new_fn_t;
-                lua_State* L = getLuaState();
+            template <typename... TParams>
+            self_type &setDefaultNew(const std::string &method_name = "new") {
+                typedef std::function<pointer_type(TParams && ...)> new_fn_t;
+                lua_State *L = get_lua_state();
 
-                new_fn_t fn = [L](TParams&&... params) {
-                    return create<TParams&&...>(L, params...);
-                };
+                new_fn_t fn = [L](TParams &&... params) { return create<TParams &&...>(L, params...); };
 
-                return addMethod<pointer_type, TParams&&...>(method_name.c_str(), fn);
+                return add_method<pointer_type, TParams &&...>(method_name.c_str(), fn);
             }
 
-            self_type& setToString(lua_CFunction f) {
-                lua_State* state = getLuaState();
+            self_type &setToString(lua_CFunction f) {
+                lua_State *state = get_lua_state();
                 // __tostring方法
                 lua_pushliteral(state, "__tostring");
                 lua_pushcfunction(state, f);
@@ -298,8 +285,8 @@ namespace script {
                 return (*this);
             }
 
-            self_type& setGC(lua_CFunction f) {
-                lua_State* state = getLuaState();
+            self_type &setGC(lua_CFunction f) {
+                lua_State *state = get_lua_state();
                 // 垃圾回收方法（注意函数内要判断排除table类型）
                 lua_pushliteral(state, "__gc");
                 lua_pushcfunction(state, f);
@@ -311,20 +298,19 @@ namespace script {
             }
 
         private:
-
             /**
              * Registers the class.
              *
-             * @author  
+             * @author
              * @date    2014/10/25
              */
             void register_class() {
                 // 初始化后就不再允许新的类注册了
-                assert(false == LuaBindingMgr::Instance()->isInited());
+                assert(false == lua_binding_mgr::instance()->isInited());
 
-                LuaBindingClassMgrInst<proxy_type>::Instance();
+                lua_binding_class_mgr_inst<proxy_type>::instance();
 
-                lua_State* state = getLuaState();
+                lua_State *state = get_lua_state();
                 // 注册C++类
                 {
                     lua_newtable(state);
@@ -333,7 +319,7 @@ namespace script {
                     lua_newtable(state);
                     class_memtable_ = lua_gettop(state);
 
-                    luaL_newmetatable(state, getLuaMetaTableName());
+                    luaL_newmetatable(state, get_lua_metatable_name());
                     class_metatable_ = lua_gettop(state);
 
 
@@ -341,7 +327,7 @@ namespace script {
                     // 注意__index留空
                     lua_pushstring(state, getLuaName());
                     lua_pushvalue(state, class_table_);
-                    lua_settable(state, owner_ns_.getNamespaceTable());
+                    lua_settable(state, owner_ns_.get_namespace_table());
 
                     /**
                     * table 初始化(静态成员)
@@ -383,16 +369,13 @@ namespace script {
             }
 
             void finish_class() {
-                if (nullptr == default_funcs_[FT_TOSTRING])
-                    setToString(__tostring);
+                if (nullptr == default_funcs_[FT_TOSTRING]) setToString(__tostring);
 
-                if (nullptr == default_funcs_[FT_GC])
-                    setGC(__lua_gc);
+                if (nullptr == default_funcs_[FT_GC]) setGC(__lua_gc);
             }
 
-        //================ 以下方法皆为lua接口，并提供给C++层使用 ================
+            //================ 以下方法皆为lua接口，并提供给C++层使用 ================
         public:
-
             /**
              * 创建新实例，并把相关的lua对象入栈
              *
@@ -400,12 +383,12 @@ namespace script {
              *
              * @return  null if it fails, else a pointer_type.
              */
-            template<typename... TParams>
-            static pointer_type create(lua_State *L, TParams&&... params) {
+            template <typename... TParams>
+            static pointer_type create(lua_State *L, TParams &&... params) {
                 pointer_type obj = pointer_type(new proxy_type(std::forward<TParams>(params)...));
 
                 // 添加到缓存表，防止被立即析构
-                LuaBindingClassMgrInst<proxy_type>::Instance()->addRef(L, obj);
+                lua_binding_class_mgr_inst<proxy_type>::instance()->add_ref(L, obj);
                 return obj;
             }
 
@@ -413,7 +396,7 @@ namespace script {
             /**
              * __tostring 方法
              *
-             * @author  
+             * @author
              * @date    2014/10/25
              *
              * @param [in,out]  L   If non-null, the lua_State * to process.
@@ -437,17 +420,18 @@ namespace script {
                 lua_pushliteral(L, "__classname");
                 lua_gettable(L, -3);
 
-                ss << "[";;
+                ss << "[";
+                ;
                 if (lua_isstring(L, -2))
-                    ss<< lua_tostring(L, -2);
+                    ss << lua_tostring(L, -2);
                 else
-                    ss<< "native code";
-                ss<< " : ";
+                    ss << "native code";
+                ss << " : ";
 
                 if (lua_isstring(L, -1))
-                    ss<< lua_tostring(L, -1);
+                    ss << lua_tostring(L, -1);
                 else
-                    ss<< " unknown type";
+                    ss << " unknown type";
                 ss << "] @" << real_ptr.get();
 
                 std::string str = ss.str();
@@ -458,7 +442,7 @@ namespace script {
             /**
              * 垃圾回收方法
              *
-             * @author  
+             * @author
              * @date    2014/10/25
              *
              * @param [in,out]  L   If non-null, the lua_State * to process.
@@ -489,9 +473,9 @@ namespace script {
             /**
              * __call 方法，不存在的方法要输出错误
              */
-            //static int __call(lua_State *L) {
+            // static int __call(lua_State *L) {
             //	WLOGERROR("lua try to call invalid member method [%s].%s(%d parameters)\n",
-            //        getLuaMetaTableName(),
+            //        get_lua_metatable_name(),
             //        luaL_checklstring(L, 1, NULL),
             //        lua_gettop(L) - 1
             //    );
@@ -499,15 +483,15 @@ namespace script {
             //}
 
             static int __member_method_unwrapper(lua_State *L) {
-                member_proxy_method_t* fn = reinterpret_cast<member_proxy_method_t*>(lua_touserdata(L, lua_upvalueindex(1)));
+                member_proxy_method_t *fn = reinterpret_cast<member_proxy_method_t *>(lua_touserdata(L, lua_upvalueindex(1)));
                 if (nullptr == fn) {
-                    WLOGERROR("lua try to call member method in class %s but fn not set.\n", getLuaMetaTableName());
+                    WLOGERROR("lua try to call member method in class %s but fn not set.\n", get_lua_metatable_name());
                     fn::print_traceback(L, "");
                     return 0;
                 }
 
-                const char* class_name = getLuaMetaTableName();
-                userdata_ptr_type pobj = static_cast<userdata_ptr_type>(luaL_checkudata(L, 1, class_name));  // get 'self'
+                const char *class_name = get_lua_metatable_name();
+                userdata_ptr_type pobj = static_cast<userdata_ptr_type>(luaL_checkudata(L, 1, class_name)); // get 'self'
 
                 if (nullptr == pobj) {
                     WLOGERROR("lua try to call %s's member method but self not set or type error.\n", class_name);
@@ -528,16 +512,16 @@ namespace script {
             }
 
         private:
-            lua_State* lua_state_;
+            lua_State *lua_state_;
 
             std::string lua_class_name_;
-            LuaBindingNamespace owner_ns_;
-            LuaBindingNamespace as_ns_;
+            lua_binding_namespace owner_ns_;
+            lua_binding_namespace as_ns_;
 
-            int class_table_ = 0;       /**< 公共类型的Lua Table*/
-            int class_memtable_ = 0;    /**< The class table*/
-            int class_metatable_ = 0;    /**< The class table*/
+            int class_table_ = 0;     /**< 公共类型的Lua Table*/
+            int class_memtable_ = 0;  /**< The class table*/
+            int class_metatable_ = 0; /**< The class table*/
         };
-
     }
 }
+#endif

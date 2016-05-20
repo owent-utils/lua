@@ -1,12 +1,15 @@
-﻿#pragma once
+#ifndef _SCRIPT_LUA_LUABINDINGNAMESPACE_
+#define _SCRIPT_LUA_LUABINDINGNAMESPACE_
 
-#include <string>
-#include <list>
+#pragma once
+
 #include <functional>
+#include <list>
 #include <std/explicit_declare.h>
+#include <string>
 
-#include "LuaBindingUnwrapper.h"
-#include "LuaBindingWrapper.h"
+#include "lua_binding_unwrapper.h"
+#include "lua_binding_wrapper.h"
 
 namespace script {
     namespace lua {
@@ -18,17 +21,17 @@ namespace script {
          * @date    2014/10/25
          */
 
-        template<typename T, typename TP>
-        class LuaBindingClass;
+        template <typename T, typename TP>
+        class lua_binding_class;
 
-        class LuaBindingNamespace {
+        class lua_binding_namespace {
         public:
-            typedef LuaBindingNamespace self_type;
-            typedef int(*static_method)(lua_State*);
+            typedef lua_binding_namespace self_type;
+            typedef int (*static_method)(lua_State *);
 
         public:
-            LuaBindingNamespace();
-            LuaBindingNamespace(const char* namespace_, lua_State* L);
+            lua_binding_namespace();
+            lua_binding_namespace(const char *namespace_, lua_State *L);
 
             /**
              * 在namespace的基础上再构建namespace
@@ -37,32 +40,32 @@ namespace script {
              * @param   ns          The father ns.
              */
 
-            LuaBindingNamespace(const char* namespace_, LuaBindingNamespace& ns);
-            ~LuaBindingNamespace();
+            lua_binding_namespace(const char *namespace_, lua_binding_namespace &ns);
+            ~lua_binding_namespace();
 
             /**
              * 开启命名空间
              */
-            bool open(const char* namespace_, lua_State* L);
+            bool open(const char *namespace_, lua_State *L);
 
             /**
              * 关闭命名空间，重置lua栈top
-             *  
+             *
              */
             void close();
 
-            int getNamespaceTable();
+            int get_namespace_table();
 
             /**
              * 复制构造,会转移命名空间table的所有权
              */
-            LuaBindingNamespace(LuaBindingNamespace& ns);
+            lua_binding_namespace(lua_binding_namespace &ns);
 
             /**
              * 复制赋值,会转移命名空间table的所有权
              * @param ns 目标
              */
-            LuaBindingNamespace& operator=(LuaBindingNamespace& ns);
+            lua_binding_namespace &operator=(lua_binding_namespace &ns);
 
 
             /**
@@ -70,12 +73,11 @@ namespace script {
             *
             * @return  self.
             */
-            template<typename Ty>
-            self_type& addConst(const char* const_name, Ty n) {
-                lua_State* state = getLuaState();
+            template <typename Ty>
+            self_type &add_const(const char *const_name, Ty n) {
+                lua_State *state = get_lua_state();
                 int ret_num = detail::wraper_var<Ty>::wraper(state, n);
-                if (ret_num > 0)
-                    lua_setfield(state, getNamespaceTable(), const_name);
+                if (ret_num > 0) lua_setfield(state, get_namespace_table(), const_name);
 
                 return *this;
             }
@@ -85,7 +87,7 @@ namespace script {
             *
             * @return  self.
             */
-            self_type& addConst(const char* const_name, const char* n, size_t s);
+            self_type &add_const(const char *const_name, const char *n, size_t s);
 
             /**
              * 给命名空间添加方法，自动推断类型
@@ -94,13 +96,13 @@ namespace script {
              * @param   func_name   Name of the function.
              * @param   fn          The function.
              */
-            template<typename R, typename... TParam>
-            self_type& addMethod(const char* func_name, R(*fn)(TParam... param)) {
-                lua_State* state = getLuaState();
+            template <typename R, typename... TParam>
+            self_type &add_method(const char *func_name, R (*fn)(TParam... param)) {
+                lua_State *state = get_lua_state();
                 lua_pushstring(state, func_name);
-                lua_pushlightuserdata(state, reinterpret_cast<void*>(fn));
+                lua_pushlightuserdata(state, reinterpret_cast<void *>(fn));
                 lua_pushcclosure(state, detail::unwraper_static_fn<R, TParam...>::LuaCFunction, 1);
-                lua_settable(state, getNamespaceTable());
+                lua_settable(state, get_namespace_table());
 
                 return (*this);
             }
@@ -115,36 +117,39 @@ namespace script {
              *
              * @return  A self_type&amp;
              */
-            template<typename R, typename... TParam>
-            self_type& addMethod(const char* func_name, std::function<R(TParam...)> fn) {
+            template <typename R, typename... TParam>
+            self_type &add_method(const char *func_name, std::function<R(TParam...)> fn) {
                 typedef std::function<R(TParam...)> fn_t;
 
-                lua_State* state = getLuaState();
+                lua_State *state = get_lua_state();
                 lua_pushstring(state, func_name);
 
-                LuaBindingPlacementNewAndDelete<fn_t>::create(state, fn);
+                lua_binding_placement_new_and_delete<fn_t>::create(state, fn);
                 lua_pushcclosure(state, detail::unwraper_functor_fn<R, TParam...>::LuaCFunction, 1);
-                lua_settable(state, getNamespaceTable());
+                lua_settable(state, get_namespace_table());
 
                 return (*this);
             }
 
 
-            lua_State* getLuaState();
+            lua_State *get_lua_state();
+
         private:
             static int __static_method_wrapper(lua_State *L);
 
         private:
             bool find_ns();
-            void build_ns_set(const char* namespace_);
+            void build_ns_set(const char *namespace_);
 
-            lua_State* lua_state_;
+            lua_State *lua_state_;
             std::list<std::string> ns_;
             int base_stack_top_;
             int this_ns_;
 
-            template<typename T, typename TP>
-            friend class LuaBindingClass;
+            template <typename T, typename TP>
+            friend class lua_binding_class;
         };
     }
 }
+
+#endif

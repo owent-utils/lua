@@ -1,28 +1,24 @@
 ﻿#include <cstdlib>
 #include <sstream>
 
-#include "LuaBindingNamespace.h"
+#include "lua_binding_namespace.h"
 
 extern "C" {
-#include <lua.h>
 #include <lauxlib.h>
+#include <lua.h>
 #include <lualib.h>
 }
 
-#include "log/LogWrapperMgr.h"
+namespace script {
+    namespace lua {
+        lua_binding_namespace::lua_binding_namespace() : lua_state_(nullptr), base_stack_top_(0), this_ns_(0) {}
 
-namespace script
-{
-    namespace lua
-    {
-        LuaBindingNamespace::LuaBindingNamespace() : lua_state_(nullptr), base_stack_top_(0), this_ns_(0){
-        }
-
-        LuaBindingNamespace::LuaBindingNamespace(const char* namespace_, lua_State* L) : lua_state_(nullptr), base_stack_top_(0), this_ns_(0){
+        lua_binding_namespace::lua_binding_namespace(const char *namespace_, lua_State *L)
+            : lua_state_(nullptr), base_stack_top_(0), this_ns_(0) {
             open(namespace_, L);
         }
 
-        LuaBindingNamespace::LuaBindingNamespace(const char* namespace_, LuaBindingNamespace& ns) {
+        lua_binding_namespace::lua_binding_namespace(const char *namespace_, lua_binding_namespace &ns) {
             lua_state_ = ns.lua_state_;
             this_ns_ = ns.this_ns_;
             base_stack_top_ = 0;
@@ -31,15 +27,13 @@ namespace script
             ns_.insert(ns_.begin(), ns.ns_.begin(), ns.ns_.end());
         }
 
-        LuaBindingNamespace::~LuaBindingNamespace() {
-            close();
-        }
+        lua_binding_namespace::~lua_binding_namespace() { close(); }
 
-        LuaBindingNamespace::LuaBindingNamespace(LuaBindingNamespace& ns) : lua_state_(nullptr), base_stack_top_(0), this_ns_(0){
+        lua_binding_namespace::lua_binding_namespace(lua_binding_namespace &ns) : lua_state_(nullptr), base_stack_top_(0), this_ns_(0) {
             (*this) = ns;
         }
-        
-        LuaBindingNamespace& LuaBindingNamespace::operator=(LuaBindingNamespace& ns) {
+
+        lua_binding_namespace &lua_binding_namespace::operator=(lua_binding_namespace &ns) {
             this_ns_ = ns.this_ns_;
             ns_ = ns.ns_;
             base_stack_top_ = ns.base_stack_top_;
@@ -50,7 +44,7 @@ namespace script
         }
 
 
-        bool LuaBindingNamespace::open(const char* namespace_, lua_State* L) {
+        bool lua_binding_namespace::open(const char *namespace_, lua_State *L) {
             close();
 
             if (NULL == namespace_) {
@@ -65,17 +59,15 @@ namespace script
             return find_ns();
         }
 
-        void LuaBindingNamespace::close() {
-            if (0 != base_stack_top_)
-                lua_settop(lua_state_, base_stack_top_);
+        void lua_binding_namespace::close() {
+            if (0 != base_stack_top_) lua_settop(lua_state_, base_stack_top_);
 
             base_stack_top_ = 0;
             ns_.clear();
         }
 
-        int LuaBindingNamespace::getNamespaceTable() {
-            if (this_ns_)
-                return this_ns_;
+        int lua_binding_namespace::get_namespace_table() {
+            if (this_ns_) return this_ns_;
 #ifdef LUA_RIDX_GLOBALS
             base_stack_top_ = base_stack_top_ ? base_stack_top_ : lua_gettop(lua_state_);
             lua_rawgeti(lua_state_, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
@@ -85,32 +77,30 @@ namespace script
 #endif
         }
 
-        LuaBindingNamespace::self_type& LuaBindingNamespace::addConst(const char* const_name, const char* n, size_t s) {
-            lua_State* state = getLuaState();
+        lua_binding_namespace::self_type &lua_binding_namespace::add_const(const char *const_name, const char *n, size_t s) {
+            lua_State *state = get_lua_state();
             lua_pushstring(state, const_name);
             lua_pushlstring(state, n, s);
-            lua_settable(state, getNamespaceTable());
+            lua_settable(state, get_namespace_table());
 
             return *this;
         }
 
-        lua_State* LuaBindingNamespace::getLuaState() {
-            return lua_state_;
-        }
+        lua_State *lua_binding_namespace::get_lua_state() { return lua_state_; }
 
-        int LuaBindingNamespace::__static_method_wrapper(lua_State *L) {
+        int lua_binding_namespace::__static_method_wrapper(lua_State *L) {
             static_method fn = reinterpret_cast<static_method>(lua_touserdata(L, lua_upvalueindex(1)));
             if (NULL == fn) {
-            	WLOGERROR("lua try to call static method but fn not set.\n");
+                WLOGERROR("lua try to call static method but fn not set.\n");
                 return 0;
             }
 
             return fn(L);
         }
 
-        void LuaBindingNamespace::build_ns_set(const char* namespace_) {
+        void lua_binding_namespace::build_ns_set(const char *namespace_) {
             // strtok(str, ".") is not thread safe
-            const char* s = namespace_, *e = namespace_;
+            const char *s = namespace_, *e = namespace_;
             while (*e) {
                 if ('.' == *e) {
                     ns_.push_back(std::string(s, e));
@@ -118,15 +108,14 @@ namespace script
                 }
 
                 ++e;
-                }
-            if (s < e)
-                ns_.push_back(std::string(s, e));
+            }
+            if (s < e) ns_.push_back(std::string(s, e));
         }
 
-        bool LuaBindingNamespace::find_ns() {
-            int cur_ns = getNamespaceTable();
+        bool lua_binding_namespace::find_ns() {
+            int cur_ns = get_namespace_table();
 
-            for (std::string& ns : ns_) {
+            for (std::string &ns : ns_) {
                 lua_pushlstring(lua_state_, ns.c_str(), ns.size());
                 lua_gettable(lua_state_, cur_ns);
                 if (lua_isnil(lua_state_, -1)) {
@@ -136,7 +125,7 @@ namespace script
                     lua_pushlstring(lua_state_, ns.c_str(), ns.size());
                     lua_pushvalue(lua_state_, top);
                     lua_settable(lua_state_, cur_ns);
-                } 
+                }
 
                 if (0 == lua_istable(lua_state_, -1)) {
                     return false;

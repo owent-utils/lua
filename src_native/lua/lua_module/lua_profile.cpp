@@ -7,7 +7,7 @@
 
 #include <String/StringCommon.h>
 
-#include "LuaProfile.h"
+#include "lua_profile.h"
 
 extern "C" {
 #include "lualib.h"
@@ -18,37 +18,37 @@ namespace script
     namespace lua
     {
         static int LuaProfile_start(lua_State *L) {
-            LuaProfile::Instance()->init(L);
+            lua_profile::Instance()->init(L);
             return 0;
         }
 
         static int LuaProfile_stop(lua_State *L) {
-            LuaProfile::Instance()->stop(L);
+            lua_profile::Instance()->stop(L);
             return 0;
         }
 
         static int LuaProfile_reset(lua_State *L) {
-            LuaProfile::Instance()->reset();
+            lua_profile::Instance()->reset();
             return 0;
         }
 
         static int LuaProfile_enable(lua_State *L) {
-            LuaProfile::Instance()->enable();
+            lua_profile::Instance()->enable();
             return 0;
         }
 
         static int LuaProfile_disable(lua_State *L) {
-            LuaProfile::Instance()->disable();
+            lua_profile::Instance()->disable();
             return 0;
         }
         
         static int LuaProfile_enableNativeProfile(lua_State *L) {
-            LuaProfile::Instance()->enableNativeProf();
+            lua_profile::Instance()->enableNativeProf();
             return 0;
         }
 
         static int LuaProfile_disableNativeProfile(lua_State *L) {
-            LuaProfile::Instance()->disableNativeProf();
+            lua_profile::Instance()->disableNativeProf();
             return 0;
         }
 
@@ -60,13 +60,13 @@ namespace script
                 file_path.assign(fn, len);
             }
 
-            std::string ret = LuaProfile::Instance()->dump_to(file_path);
+            std::string ret = lua_profile::Instance()->dump_to(file_path);
             lua_pushlstring(L, ret.c_str(), ret.size());
             return 1;
         }
 
         static int LuaProfile_dump(lua_State *L) {
-            std::string ret = LuaProfile::Instance()->dump();
+            std::string ret = lua_profile::Instance()->dump();
             lua_pushlstring(L, ret.c_str(), ret.size());
             return 1;
         }
@@ -117,7 +117,7 @@ namespace script
 
         // hook_fn[lua fn, stat fn](...)
         static int LuaProfile_hook_run_fn(lua_State *L) {
-            auto profile = LuaProfile::Instance();
+            auto profile = lua_profile::Instance();
             // 获取Lua调用信息
             lua_Debug ar;
             lua_getstack(L, 0, &ar);
@@ -304,16 +304,16 @@ namespace script
         }
 
 
-        LuaProfile::LuaProfile() :inited_(false), enabled_(true), origin_hook_(nullptr), origin_mask_(0)
+        lua_profile::lua_profile() :inited_(false), enabled_(true), origin_hook_(nullptr), origin_mask_(0)
         {
         }
 
 
-        LuaProfile::~LuaProfile()
+        lua_profile::~lua_profile()
         {
         }
 
-        void LuaProfile::init(lua_State* L) {
+        void lua_profile::init(lua_State* L) {
             if (inited_)
                 return;
 
@@ -325,7 +325,7 @@ namespace script
             lua_sethook(L, Hook_Fn, mask, lua_gethookcount(L));
         }
 
-        void LuaProfile::reset() {
+        void lua_profile::reset() {
             // 初始化
             call_stack_.reserve(1024);
             call_fn_prof_list_.reserve(1024);
@@ -338,7 +338,7 @@ namespace script
             enabled_native_code_ = true;
         }
 
-        void LuaProfile::stop(lua_State* L) {
+        void lua_profile::stop(lua_State* L) {
             if (!inited_)
                 return;
 
@@ -349,23 +349,23 @@ namespace script
             origin_mask_ = 0;
         }
 
-        void LuaProfile::enable() {
+        void lua_profile::enable() {
             enabled_ = true;
         }
         
-        void LuaProfile::disable() {
+        void lua_profile::disable() {
             enabled_ = false;
         }
 
-        void LuaProfile::enableNativeProf() {
+        void lua_profile::enableNativeProf() {
             enabled_native_code_ = true;
         }
 
-        void LuaProfile::disableNativeProf() {
+        void lua_profile::disableNativeProf() {
             enabled_native_code_ = false;
         }
 
-        std::string LuaProfile::dump_to(const std::string& file_path) {
+        std::string lua_profile::dump_to(const std::string& file_path) {
             std::fstream f;
             std::stringstream ss;
 
@@ -400,17 +400,17 @@ namespace script
             return ss.str();
         }
 
-        std::string LuaProfile::dump() {
+        std::string lua_profile::dump() {
             return std::move(dump_to(std::string()));
         }
 
-        size_t LuaProfile::push_fn(LuaProfileStackData::stack_ptr_t ptr) {
+        size_t lua_profile::push_fn(LuaProfileStackData::stack_ptr_t ptr) {
             size_t ret = call_fn_prof_list_.size();
             call_fn_prof_list_.push_back(ptr);
             return ret;
         }
 
-        void LuaProfile::pop_fn(size_t p) {
+        void lua_profile::pop_fn(size_t p) {
             while (call_fn_prof_list_.size() > p)
                 call_fn_prof_list_.pop_back();
 
@@ -433,8 +433,8 @@ namespace script
             //}
         }
 
-        void LuaProfile::Hook_Fn(lua_State *L, lua_Debug *ar) {
-            LuaProfile* profile = LuaProfile::Instance();
+        void lua_profile::Hook_Fn(lua_State *L, lua_Debug *ar) {
+            lua_profile* profile = lua_profile::Instance();
             lua_Hook origin_hook = profile->origin_hook_;
             if (nullptr != origin_hook && ((1 << ar->event) & profile->origin_mask_)) {
                 origin_hook(L, ar);
@@ -540,7 +540,7 @@ namespace script
             }
         }
 
-        LuaProfileCallData& LuaProfile::enter_lua_func(const prof_key_t& key) {
+        LuaProfileCallData& lua_profile::enter_lua_func(const prof_key_t& key) {
             auto iter = call_stats_.find(key);
             prof_ptr prof_data;
             if (iter == call_stats_.end()) {
@@ -582,7 +582,7 @@ namespace script
             return this_stack;
         }
 
-        void LuaProfile::exit_lua_func(const prof_key_t& key) {
+        void lua_profile::exit_lua_func(const prof_key_t& key) {
             LuaProfileCallData* this_stack = nullptr;
             while (true) {
                 // 刚启动时可能lua执行栈并不在顶层
@@ -633,13 +633,13 @@ namespace script
             this_stack = nullptr;
         }
 
-        LuaProfileCallData& LuaProfile::enter_native_func(const prof_key_t& key) {
+        LuaProfileCallData& lua_profile::enter_native_func(const prof_key_t& key) {
             LuaProfileCallData& ret = enter_lua_func(key);
             ret.is_native_call = true;
             return ret;
         }
 
-        void LuaProfile::exit_native_func(const prof_key_t& key) {
+        void lua_profile::exit_native_func(const prof_key_t& key) {
             LuaProfileCallData* this_stack = nullptr;
             while (true) {
                 // 刚启动时可能lua执行栈并不在顶层
