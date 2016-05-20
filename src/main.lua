@@ -5,7 +5,7 @@ do
     end
 
     if _G.lua_log then
-        lua_log(1, info)
+        lua_log(0, 1, info)
     else
         print(info)
     end
@@ -18,7 +18,7 @@ require('utils.event')
 
 -- 那啥cocos2d会关闭标准输入输出函数, 会导致vardump无输出
 do
-    _G.vardump_default.ostream = log_stream
+    -- _G.vardump_default.ostream = log_stream(0, logc_fatal)
 end
 
 -- 注册所有game下的table为命名空间

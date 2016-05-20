@@ -80,17 +80,21 @@ namespace script {
             template <typename... Ty>
             struct unwraper_var<std::map<std::string, std::string>, Ty...> {
                 static std::map<std::string, std::string> unwraper(lua_State *L, int index) {
-                    script::lua::lua_auto_block protect_top(L);
+                    // script::lua::lua_auto_block protect_top(L);
 
                     std::map<std::string, std::string> ret;
                     if (lua_gettop(L) < index) {
                         return ret;
                     }
 
+                    luaL_checktype(L, index, LUA_TTABLE);
+
                     /* table is in the stack at index 't' */
                     lua_pushnil(L); /* first key */
                     while (lua_next(L, index) != 0) {
-                        ret[lua_tostring(L, -2)] = lua_tostring(L, -1);
+                        std::string key = luaL_checkstring(L, -2);
+                        std::string val = luaL_checkstring(L, -1);
+                        ret[key] = val;
                         lua_pop(L, 1);
                     }
 
@@ -113,8 +117,7 @@ int main(int argc, char *argv[]) {
     script::lua::lua_engine::get_instance().init();
 
     // 添加搜索目录
-    script::lua::lua_engine::get_instance().add_search_path("../../src/?.lua");
-    script::lua::lua_engine::get_instance().add_search_path("../../src/?.luac");
+    script::lua::lua_engine::get_instance().add_search_path("../../src");
 
     // 对象池管理器初始化
     script::lua::lua_binding_mgr::get_instance().init(script::lua::lua_engine::get_instance().get_lua_state());
@@ -145,7 +148,7 @@ static void test_namespace_method_and_auto_call() {
     vec.push_back("hello");
     vec.push_back("world");
     vec.push_back("!");
-    script::lua::fn::auto_call(L, "_G.test.auto_call", "ready go", 123, vec);
+    script::lua::auto_call(L, "_G.test.auto_call", "ready go", 123, vec);
 }
 
 LUA_BIND_OBJECT(sample_class) {
@@ -166,7 +169,7 @@ LUA_BIND_OBJECT(sample_class) {
         cs.add_const("INITED", sample_class::INITED);
 
         // 函数
-        cs.add_method("auto_call", test_namespace_method_and_auto_call);
+        clazz.get_owner_namespace().add_method("auto_call", test_namespace_method_and_auto_call);
     }
 
     // 函数
