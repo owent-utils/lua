@@ -118,61 +118,79 @@ math.epsilon = 0.0000001192092896
 
 -- table扩展
 
---转入c实现
---function table.extend(dst, src, ...)
---    if nil == dst or nil == src then
---        return dst
---    end
+-- table扩展
+--软实现
+if not table.extend then
+    function table.extend(dst, src, ...)
+        if nil == dst or nil == src then
+            return dst
+        end
 
---    for k, v in pairs(src) do
---        dst[k] = v
---    end
---    table.extend(dst, ...)
---    return dst
---end
+        for k, v in pairs(src) do
+            dst[k] = v
+        end
+        table.extend(dst, ...)
+        return dst
+    end
 
---转入c实现
---function table.extend_r(dst, src, ...)
---    if nil == dst or nil == src then
---        return dst
---    end
+    print('soft version => table.extend')
+end
 
---    for k, v in pairs(src) do
---        if 'table' == type(v) then
---            dst[k] = table.extend_r(dst[k] or {}, v)
---        else
---            dst[k] = v
---        end
---    end
+if not table.create then
+    function table.create(narr, nrec, ...)
+        return table.extend({}, ...)
+    end
+    print('soft version => table.create')
+end
 
---    table.extend_r(dst, ...)
---    return dst
---end
+--软实现
+if not table.extend_r then
+    function table.extend_r(dst, src, ...)
+        if nil == dst or nil == src then
+            return dst
+        end
 
---转入c实现
---function table.clone(src)
---    if nil == src or 'table' ~= type(src) then
---        return nil
---    end
+        for k, v in pairs(src) do
+            if 'table' == type(v) then
+                dst[k] = table.extend_r(dst[k] or {}, v)
+            else
+                dst[k] = v
+            end
+        end
 
---    local ret = {}
---    for k, v in pairs(src) do
---        if 'table' == type(v) then
---            ret[k] = table.clone(v)
---        else
---            ret[k] = v
---        end
---    end
+        table.extend_r(dst, ...)
+        return dst
+    end
+    print('soft version => table.extend_r')
+end
 
---    local mtb = getmetatable(src)
---    if src == mtb then
---        setmetatable(ret, ret)
---    else
---        setmetatable(ret, mtb)
---    end
+--软实现
+if not table.clone then
+    function table.clone(src)
+        if nil == src or 'table' ~= type(src) then
+            return nil
+        end
 
---    return ret
---end
+        local ret = {}
+        for k, v in pairs(src) do
+            if 'table' == type(v) then
+                ret[k] = table.clone(v)
+            else
+                ret[k] = v
+            end
+        end
+
+        local mtb = getmetatable(src)
+        if src == mtb then
+            setmetatable(ret, ret)
+        else
+            setmetatable(ret, mtb)
+        end
+
+        return ret
+    end
+    print('soft version => table.clone')
+end
 
 -- 二分查找
 -- @param src table

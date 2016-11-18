@@ -28,7 +28,7 @@ do
         local this_path = prefix .. name
         prefix = this_path .. '.'
 
-        for k, v in pairs(tb) do
+        for k, v in pairs(tb or {}) do
             -- 命名空间注册基类
             if 'table' == type(v) and nil == getmetatable(v) then
                 reg_game_namespace(v, prefix, k, class.namespace)
@@ -43,7 +43,9 @@ do
         class.register(tb, base_type, this_path)
     end
 
-    reg_game_namespace(game, '', 'game', class.namespace)
+    if _G.game then
+        reg_game_namespace(_G.game, '', 'game', class.namespace)
+    end
 end
 
 -- 加载bootstrap
