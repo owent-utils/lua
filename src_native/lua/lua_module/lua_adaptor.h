@@ -1,5 +1,5 @@
-#ifndef _SCRIPT_LUA_LUAADAPTOR_
-#define _SCRIPT_LUA_LUAADAPTOR_
+#ifndef SCRIPT_LUA_LUAADAPTOR
+#define SCRIPT_LUA_LUAADAPTOR
 
 #pragma once
 
@@ -33,6 +33,10 @@ typedef unsigned int lua_Unsigned;
 
 
 #define LUA_EQUAL(L, index1, index2) lua_compare(L, index1, index2, LUA_OPEQ)
+#endif
+
+#ifndef LUA_OK
+#define LUA_OK 0
 #endif
 
 #endif

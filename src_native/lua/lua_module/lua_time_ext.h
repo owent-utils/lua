@@ -1,5 +1,5 @@
-#ifndef _SCRIPT_LUA_LUATIMEEXT_
-#define _SCRIPT_LUA_LUATIMEEXT_
+#ifndef SCRIPT_LUA_LUATIMEEXT
+#define SCRIPT_LUA_LUATIMEEXT
 
 #pragma once
 
@@ -12,6 +12,6 @@ namespace script {
     namespace lua {
         int lua_time_ext_openlib(lua_State *L);
     }
-}
+} // namespace script
 
 #endif

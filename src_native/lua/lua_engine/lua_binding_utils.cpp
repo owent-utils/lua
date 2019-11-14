@@ -1,5 +1,5 @@
-﻿#include <cstdlib>
-#include <cmath>
+﻿#include <cmath>
+#include <cstdlib>
 #include <ctime>
 #include <list>
 #include <sstream>
@@ -19,6 +19,15 @@ namespace script {
         lua_auto_block::~lua_auto_block() { lua_settop(state_, stack_top_); }
 
         void lua_auto_block::null_call() {}
+
+#if !(defined(LIBATFRAME_UTILS_ENABLE_RTTI) && LIBATFRAME_UTILS_ENABLE_RTTI)
+        std::string lua_binding_userdata_generate_metatable_name() {
+            static int clazz_idx = 0;
+            std::stringstream ss;
+            ss << "lua metatable " << (++clazz_idx);
+            return ss.str();
+        }
+#endif
 
         namespace fn {
             int get_pcall_hmsg(lua_State *L) {
@@ -195,11 +204,77 @@ namespace script {
                 return true;
             }
 
+            bool exec_file_with_env(lua_State *L, const char *file_path, int envidx) {
+                lua_auto_block autoBlock(L);
+
+                int hmsg = get_pcall_hmsg(L);
+                if (LUA_OK != luaL_loadfile(L, file_path)) {
+                    WLOGERROR("%s", luaL_checkstring(L, -1));
+                    return false;
+                }
+
+                if (envidx < 0) {
+                    envidx -= 2;
+                }
+                lua_pushvalue(L, envidx);
+                // @see https://www.lua.org/manual/5.3/manual.html#2.2 and load_aux@lbaselib.c in lua source
+                // @see https://www.lua.org/manual/5.1/manual.html#lua_setfenv
+#if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM > 501
+                if (NULL == lua_setupvalue(L, -2, 1)) {
+                    lua_pop(L, 1);
+                }
+#else
+                if (0 == lua_setfenv(L, -2)) {
+                    WLOGERROR("%s", "lua_setfenv(...) failed");
+                }
+#endif
+
+                if (LUA_OK != lua_pcall(L, 0, LUA_MULTRET, hmsg)) {
+                    WLOGERROR("%s", luaL_checkstring(L, -1));
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool exec_code_with_env(lua_State *L, const char *codes, int envidx) {
+                lua_auto_block autoBlock(L);
+
+                int hmsg = get_pcall_hmsg(L);
+                if (LUA_OK != luaL_loadstring(L, codes)) {
+                    WLOGERROR("%s", luaL_checkstring(L, -1));
+                    return false;
+                }
+
+                if (envidx < 0) {
+                    envidx -= 2;
+                }
+                lua_pushvalue(L, envidx);
+                // @see https://www.lua.org/manual/5.3/manual.html#2.2 and load_aux@lbaselib.c in lua source
+                // @see https://www.lua.org/manual/5.1/manual.html#lua_setfenv
+#if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM > 501
+                if (NULL == lua_setupvalue(L, -2, 1)) {
+                    lua_pop(L, 1);
+                }
+#else
+                if (0 == lua_setfenv(L, -2)) {
+                    WLOGERROR("%s", "lua_setfenv(...) failed");
+                }
+#endif
+
+                if (LUA_OK != lua_pcall(L, 0, LUA_MULTRET, hmsg)) {
+                    WLOGERROR("%s", luaL_checkstring(L, -1));
+                    return false;
+                }
+
+                return true;
+            }
+
             int lua_stackdump(lua_State *L) {
                 int top = lua_gettop(L);
 
 #if LUA_VERSION_NUM >= 502
-                luaL_traceback(L, L, NULL, 2);
+                luaL_traceback(L, L, NULL, 1);
 #else
                 lua_getglobal(L, "debug");
 
@@ -211,7 +286,7 @@ namespace script {
                 } else {
                     lua_pushnil(L);
                 }
-                lua_pushinteger(L, 2);
+                lua_pushinteger(L, 1);
 
                 if (lua_pcall(L, 2, LUA_MULTRET, 0) != 0) {
                     WLOGERROR("%s", luaL_checkstring(L, -1));
@@ -230,7 +305,7 @@ namespace script {
 
                     ss << "    ";
 
-                    if (ar.short_src) {
+                    if (ar.short_src[0]) {
                         ss << static_cast<const char *>(ar.short_src);
                     }
 
@@ -245,6 +320,6 @@ namespace script {
 
                 return ss.str();
             }
-        }
-    }
-}
+        } // namespace fn
+    }     // namespace lua
+} // namespace script

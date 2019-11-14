@@ -1,5 +1,5 @@
-#ifndef _SCRIPT_LUA_LUABINDINGUNWRAPPER_
-#define _SCRIPT_LUA_LUABINDINGUNWRAPPER_
+#ifndef SCRIPT_LUA_LUABINDINGUNWRAPPER
+#define SCRIPT_LUA_LUABINDINGUNWRAPPER
 
 #pragma once
 
@@ -139,7 +139,7 @@ namespace script {
             template <typename... Ty>
             struct unwraper_var<void, Ty...> {
                 template <typename TParam>
-                static void unwraper(lua_State *L, int index) {}
+                static void unwraper(lua_State *, int) {}
             };
 
             template <typename... Ty>
@@ -248,120 +248,6 @@ namespace script {
                 }
             };
 
-#ifdef LUA_BINDING_ENABLE_COCOS2D_TYPE
-            template <typename... Ty>
-            struct unwraper_var<cocos2d::Vec2, Ty...> {
-                static cocos2d::Vec2 unwraper(lua_State *L, int index) {
-                    cocos2d::Vec2 ret;
-                    LUA_CHECK_TYPE_AND_RET(table, L, index, ret);
-
-                    if (lua_gettop(L) < index) return static_cast<cocos2d::Vec2>(ret);
-
-                    lua_getfield(L, index, "x");
-                    ret.x = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "y");
-                    ret.y = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    return ret;
-                }
-            };
-
-            template <typename... Ty>
-            struct unwraper_var<cocos2d::Vec3, Ty...> {
-                static cocos2d::Vec3 unwraper(lua_State *L, int index) {
-                    cocos2d::Vec3 ret;
-                    LUA_CHECK_TYPE_AND_RET(table, L, index, ret);
-
-                    lua_getfield(L, index, "x");
-                    ret.x = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "y");
-                    ret.y = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "z");
-                    ret.z = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    return ret;
-                }
-            };
-
-            template <typename... Ty>
-            struct unwraper_var<cocos2d::Vec4, Ty...> {
-                static cocos2d::Vec4 unwraper(lua_State *L, int index) {
-                    cocos2d::Vec4 ret;
-                    LUA_CHECK_TYPE_AND_RET(table, L, index, ret);
-
-                    lua_getfield(L, index, "x");
-                    ret.x = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "y");
-                    ret.y = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "z");
-                    ret.z = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "w");
-                    ret.w = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    return ret;
-                }
-            };
-
-            template <typename... Ty>
-            struct unwraper_var<cocos2d::Size, Ty...> {
-                static cocos2d::Size unwraper(lua_State *L, int index) {
-                    cocos2d::Size ret;
-                    LUA_CHECK_TYPE_AND_RET(table, L, index, ret);
-
-                    lua_getfield(L, index, "width");
-                    ret.width = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "height");
-                    ret.height = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    return ret;
-                }
-            };
-
-            template <typename... Ty>
-            struct unwraper_var<cocos2d::Rect, Ty...> {
-                static cocos2d::Rect unwraper(lua_State *L, int index) {
-                    cocos2d::Rect ret;
-                    LUA_CHECK_TYPE_AND_RET(table, L, index, ret);
-
-                    lua_getfield(L, index, "x");
-                    ret.origin.x = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "y");
-                    ret.origin.y = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "width");
-                    ret.size.width = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    lua_getfield(L, index, "height");
-                    ret.size.height = static_cast<float>(luaL_checknumber(L, -1));
-                    lua_pop(L, 1);
-
-                    return ret;
-                }
-            };
-
-#endif
             // ============== stl 扩展 =================
             template <typename TLeft, typename TRight, typename... Ty>
             struct unwraper_var<std::pair<TLeft, TRight>, Ty...> {
@@ -487,7 +373,7 @@ namespace script {
                     }
                     lua_pop(L, 1);
 
-                    return std::move(ret);
+                    return ret;
                 }
             };
 
@@ -504,7 +390,7 @@ namespace script {
                     using std::min;
                     copy(start, start + min(SIZE, len), ret);
 
-                    return std::move(ret);
+                    return ret;
                 }
             };
             // -------------- 数组支持 --------------
@@ -543,9 +429,53 @@ namespace script {
                 }
             };
 
+            template <typename Tr>
+            struct unwraper_static_fn_base_with_L;
+
+            template <>
+            struct unwraper_static_fn_base_with_L<void> {
+                template <typename Tfn, class TupleT, int... N>
+                static int run_fn(lua_State *L, Tfn fn, index_seq_list<N...>) {
+                    fn(L, unwraper_var<typename std::tuple_element<N, TupleT>::type>::unwraper(L, N + 1)...);
+                    return 0;
+                }
+            };
+
+            template <typename Tr>
+            struct unwraper_static_fn_base_with_L {
+                template <typename Tfn, class TupleT, int... N>
+                static int run_fn(lua_State *L, Tfn fn, index_seq_list<N...>) {
+                    return wraper_var<typename std::remove_cv<typename std::remove_reference<Tr>::type>::type>::wraper(
+                        L, fn(L, unwraper_var<typename std::tuple_element<N, TupleT>::type>::unwraper(L, N + 1)...));
+                }
+            };
+
             /*************************************\
             |* 静态函数Lua绑定，动态参数个数          *|
             \*************************************/
+            template <typename Tr, typename... TParam>
+            struct unwraper_static_fn;
+
+            template <typename Tr, typename... TParam>
+            struct unwraper_static_fn<Tr, lua_State *, TParam...> : public unwraper_static_fn_base_with_L<Tr> {
+                typedef unwraper_static_fn_base_with_L<Tr> base_type;
+                typedef Tr (*value_type)(lua_State *, TParam...);
+
+
+                // 动态参数个数
+                static int LuaCFunction(lua_State *L) {
+                    value_type fn = reinterpret_cast<value_type>(lua_touserdata(L, lua_upvalueindex(1)));
+                    if (NULL == fn) {
+                        // 找不到函数
+                        return 0;
+                    }
+
+                    return base_type::template run_fn<
+                        value_type, std::tuple<typename std::remove_cv<typename std::remove_reference<TParam>::type>::type...> >(
+                        L, fn, typename build_args_index<TParam...>::index_seq_type());
+                }
+            };
+
             template <typename Tr, typename... TParam>
             struct unwraper_static_fn : public unwraper_static_fn_base<Tr> {
                 typedef unwraper_static_fn_base<Tr> base_type;
@@ -569,6 +499,29 @@ namespace script {
             /*************************************\
             |* 仿函数Lua绑定，动态参数个数          *|
             \*************************************/
+            template <typename Tr, typename... TParam>
+            struct unwraper_functor_fn;
+
+            template <typename Tr, typename... TParam>
+            struct unwraper_functor_fn<Tr, lua_State *, TParam...> : public unwraper_static_fn_base_with_L<Tr> {
+                typedef unwraper_static_fn_base_with_L<Tr> base_type;
+                typedef std::function<Tr(lua_State *, TParam...)> value_type;
+
+
+                // 动态参数个数
+                static int LuaCFunction(lua_State *L) {
+                    value_type *fn = reinterpret_cast<value_type *>(lua_touserdata(L, lua_upvalueindex(1)));
+                    if (NULL == fn) {
+                        // 找不到函数
+                        return 0;
+                    }
+
+                    return base_type::template run_fn<
+                        value_type, std::tuple<typename std::remove_cv<typename std::remove_reference<TParam>::type>::type...> >(
+                        L, *fn, typename build_args_index<TParam...>::index_seq_type());
+                }
+            };
+
             template <typename Tr, typename... TParam>
             struct unwraper_functor_fn : public unwraper_static_fn_base<Tr> {
                 typedef unwraper_static_fn_base<Tr> base_type;
@@ -594,6 +547,32 @@ namespace script {
             |* 成员函数Lua绑定，动态参数个数          *|
             \*************************************/
             template <typename Tr, typename TClass, typename... TParam>
+            struct unwraper_member_fn;
+
+            template <typename Tr, typename TClass, typename... TParam>
+            struct unwraper_member_fn<Tr, TClass, lua_State *, TParam...> : public unwraper_static_fn_base_with_L<Tr> {
+                typedef unwraper_static_fn_base_with_L<Tr> base_type;
+
+                // 动态参数个数 - 成员函数
+                static int LuaCFunction(lua_State *L, TClass *obj, Tr (TClass::*fn)(lua_State *, TParam...)) {
+                    auto fn_wraper = [obj, fn](lua_State *L, TParam &&... args) { return (obj->*fn)(L, std::forward<TParam>(args)...); };
+
+                    return base_type::template run_fn<
+                        decltype(fn_wraper), std::tuple<typename std::remove_cv<typename std::remove_reference<TParam>::type>::type...> >(
+                        L, fn_wraper, typename build_args_index<TParam...>::index_seq_type());
+                }
+
+                // 动态参数个数 - 常量成员函数
+                static int LuaCFunction(lua_State *L, TClass *obj, Tr (TClass::*fn)(lua_State *, TParam...) const) {
+                    auto fn_wraper = [obj, fn](lua_State *L, TParam &&... args) { return (obj->*fn)(L, std::forward<TParam>(args)...); };
+
+                    return base_type::template run_fn<
+                        decltype(fn_wraper), std::tuple<typename std::remove_cv<typename std::remove_reference<TParam>::type>::type...> >(
+                        L, fn_wraper, typename build_args_index<TParam...>::index_seq_type());
+                }
+            };
+
+            template <typename Tr, typename TClass, typename... TParam>
             struct unwraper_member_fn : public unwraper_static_fn_base<Tr> {
                 typedef unwraper_static_fn_base<Tr> base_type;
 
@@ -615,8 +594,8 @@ namespace script {
                         L, fn_wraper, typename build_args_index<TParam...>::index_seq_type());
                 }
             };
-        }
-    }
-}
+        } // namespace detail
+    }     // namespace lua
+} // namespace script
 
 #endif

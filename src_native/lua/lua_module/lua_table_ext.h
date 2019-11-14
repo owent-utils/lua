@@ -1,5 +1,5 @@
-#ifndef _SCRIPT_LUA_LUATABLEEXT_
-#define _SCRIPT_LUA_LUATABLEEXT_
+#ifndef SCRIPT_LUA_LUATABLEEXT
+#define SCRIPT_LUA_LUATABLEEXT
 
 #pragma once
 
@@ -12,6 +12,6 @@ namespace script {
     namespace lua {
         int lua_table_ext_openlib(lua_State *L);
     }
-}
+} // namespace script
 
 #endif

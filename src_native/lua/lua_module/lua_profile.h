@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "design_pattern/singleton.h"
 #include <assert.h>
 #include <chrono>
 #include <functional>
@@ -13,6 +12,8 @@ extern "C" {
 #include "lauxlib.h"
 #include "lua.h"
 }
+
+#include <design_pattern/singleton.h>
 
 namespace script {
     namespace lua {
@@ -146,5 +147,5 @@ namespace script {
 
             std::vector<lua_profile_stack_data::stack_ptr_t> call_fn_prof_list_;
         };
-    }
-}
+    } // namespace lua
+} // namespace script

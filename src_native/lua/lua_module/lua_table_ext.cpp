@@ -1,6 +1,6 @@
-﻿#include <cstdlib>
-#include <assert.h>
+﻿#include <assert.h>
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <list>
 #include <sstream>
@@ -297,5 +297,5 @@ namespace script {
             lua_setfield(L, -2, "extend_r");
             return 0;
         }
-    }
-}
+    } // namespace lua
+} // namespace script

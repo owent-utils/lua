@@ -1,5 +1,5 @@
-#ifndef _SCRIPT_LUA_LUABINDINGWRAPPER_
-#define _SCRIPT_LUA_LUABINDINGWRAPPER_
+#ifndef SCRIPT_LUA_LUABINDINGWRAPPER
+#define SCRIPT_LUA_LUABINDINGWRAPPER
 
 #pragma once
 
@@ -15,10 +15,6 @@
 #include <vector>
 
 #include <std/explicit_declare.h>
-
-#ifdef LUA_BINDING_ENABLE_COCOS2D_TYPE
-#include "cocos2d.h"
-#endif
 
 #include "lua_binding_mgr.h"
 #include "lua_binding_utils.h"
@@ -169,7 +165,7 @@ namespace script {
 
             template <typename... Ty>
             struct wraper_var<void, Ty...> {
-                static int wraper(lua_State *L, const void *v) { return 0; }
+                static int wraper(lua_State *, const void *) { return 0; }
             };
 
             template <typename... Ty>
@@ -284,93 +280,6 @@ namespace script {
                 }
             };
 
-#ifdef LUA_BINDING_ENABLE_COCOS2D_TYPE
-            template <typename... Ty>
-            struct wraper_var<cocos2d::Vec2, Ty...> {
-                static int wraper(lua_State *L, const cocos2d::Vec2 &v) {
-                    lua_newtable(L);
-
-                    lua_pushnumber(L, static_cast<float>(v.x));
-                    lua_setfield(L, -2, "x");
-
-                    lua_pushnumber(L, static_cast<float>(v.y));
-                    lua_setfield(L, -2, "y");
-                    return 1;
-                }
-            };
-
-            template <typename... Ty>
-            struct wraper_var<cocos2d::Vec3, Ty...> {
-                static int wraper(lua_State *L, const cocos2d::Vec3 &v) {
-                    lua_newtable(L);
-
-                    lua_pushnumber(L, static_cast<float>(v.x));
-                    lua_setfield(L, -2, "x");
-
-                    lua_pushnumber(L, static_cast<float>(v.y));
-                    lua_setfield(L, -2, "y");
-
-                    lua_pushnumber(L, static_cast<float>(v.z));
-                    lua_setfield(L, -2, "z");
-                    return 1;
-                }
-            };
-
-            template <typename... Ty>
-            struct wraper_var<cocos2d::Vec4, Ty...> {
-                static int wraper(lua_State *L, const cocos2d::Vec4 &v) {
-                    lua_newtable(L);
-
-                    lua_pushnumber(L, static_cast<float>(v.x));
-                    lua_setfield(L, -2, "x");
-
-                    lua_pushnumber(L, static_cast<float>(v.y));
-                    lua_setfield(L, -2, "y");
-
-                    lua_pushnumber(L, static_cast<float>(v.z));
-                    lua_setfield(L, -2, "z");
-
-                    lua_pushnumber(L, static_cast<float>(v.w));
-                    lua_setfield(L, -2, "w");
-                    return 1;
-                }
-            };
-
-            template <typename... Ty>
-            struct wraper_var<cocos2d::Size, Ty...> {
-                static int wraper(lua_State *L, const cocos2d::Size &v) {
-                    lua_newtable(L);
-
-                    lua_pushnumber(L, static_cast<float>(v.width));
-                    lua_setfield(L, -2, "width");
-
-                    lua_pushnumber(L, static_cast<float>(v.height));
-                    lua_setfield(L, -2, "height");
-                    return 1;
-                }
-            };
-
-            template <typename... Ty>
-            struct wraper_var<cocos2d::Rect, Ty...> {
-                static int wraper(lua_State *L, const cocos2d::Rect &v) {
-                    lua_newtable(L);
-
-                    lua_pushnumber(L, static_cast<float>(v.origin.x));
-                    lua_setfield(L, -2, "x");
-
-                    lua_pushnumber(L, static_cast<float>(v.origin.y));
-                    lua_setfield(L, -2, "y");
-
-                    lua_pushnumber(L, static_cast<float>(v.size.width));
-                    lua_setfield(L, -2, "width");
-
-                    lua_pushnumber(L, static_cast<float>(v.size.height));
-                    lua_setfield(L, -2, "height");
-                    return 1;
-                }
-            };
-
-#endif
             // ============== stl 扩展 =================
             template <typename TLeft, typename TRight, typename... Ty>
             struct wraper_var<std::pair<TLeft, TRight>, Ty...> {
@@ -514,11 +423,11 @@ namespace script {
                 }
 
                 template <class TupleT>
-                static int wraper_bat_count(lua_State *L, TupleT &&t, index_seq_list<>) {
+                static int wraper_bat_count(lua_State *, TupleT &&, index_seq_list<>) {
                     return 0;
                 }
             };
-        }
+        } // namespace detail
 
         /**
          * @brief 自动打包调用lua函数
@@ -580,6 +489,12 @@ namespace script {
 
             return res ? res : (lua_gettop(L) - top);
         };
-    }
-}
+
+        template <typename... TParams>
+        int auto_push(lua_State *L, TParams &&... params) {
+            return detail::wraper_bat_cmd::wraper_bat_count(L, std::forward_as_tuple(params...),
+                                                            typename detail::build_args_index<TParams...>::index_seq_type());
+        }
+    } // namespace lua
+} // namespace script
 #endif

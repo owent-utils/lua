@@ -1,9 +1,11 @@
-﻿#include <cstdlib>
-#include <assert.h>
+﻿#include <assert.h>
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <list>
 #include <numeric>
+
+#include <common/string_oprs.h>
 
 #include "lua_adaptor.h"
 #include "lua_time_ext.h"
@@ -18,7 +20,7 @@ namespace script {
 
             if (static_cast<std::chrono::milliseconds>(std::numeric_limits<lua_Integer>::max()) < now_ms) {
                 char n[32] = {0};
-                sprintf(n, "%lld", static_cast<long long>(now_ms.count()));
+                UTIL_STRFUNC_SNPRINTF(n, sizeof(n), "%lld", static_cast<long long>(now_ms.count()));
 
                 lua_getglobal(L, "tonumber");
                 lua_pushstring(L, n);
@@ -36,7 +38,7 @@ namespace script {
 
             if (static_cast<std::chrono::microseconds>(std::numeric_limits<lua_Integer>::max()) < now_ms) {
                 char n[32] = {0};
-                sprintf(n, "%lld", static_cast<long long>(now_ms.count()));
+                UTIL_STRFUNC_SNPRINTF(n, sizeof(n), "%lld", static_cast<long long>(now_ms.count()));
 
                 lua_getglobal(L, "tonumber");
                 lua_pushstring(L, n);
@@ -63,5 +65,5 @@ namespace script {
             lua_settop(L, top);
             return 0;
         }
-    }
-}
+    } // namespace lua
+} // namespace script

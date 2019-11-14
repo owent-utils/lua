@@ -1,5 +1,5 @@
-#ifndef _SCRIPT_LUA_LUABINDINGUTILS_
-#define _SCRIPT_LUA_LUABINDINGUTILS_
+#ifndef SCRIPT_LUA_LUABINDINGUTILS
+#define SCRIPT_LUA_LUABINDINGUTILS
 
 #pragma once
 
@@ -8,25 +8,13 @@
 #include <string>
 #include <typeinfo>
 
+#include <config/atframe_utils_build_feature.h>
+
+#include <config/compiler_features.h>
+#include <log/log_wrapper.h>
 #include <std/explicit_declare.h>
 
 #include "../lua_module/lua_adaptor.h"
-
-#ifndef WLOGERROR
-#ifdef _MSC_VER
-#define WLOGERROR(fmt, ...) fprintf(stderr, "[ERROR]:" fmt "\r\n", __VA_ARGS__)
-#else
-#define WLOGERROR(fmt, args...) fprintf(stderr, "[ERROR]:" fmt "\r\n", ##args)
-#endif
-#endif
-
-#ifndef WLOGINFO
-#ifdef _MSC_VER
-#define WLOGINFO(fmt, ...) fprintf(stdout, "[INFO]:" fmt "\r\n", __VA_ARGS__)
-#else
-#define WLOGINFO(fmt, args...) fprintf(stdout, "[INFO]:" fmt "\r\n", ##args)
-#endif
-#endif
 
 namespace script {
     namespace lua {
@@ -40,12 +28,16 @@ namespace script {
             void null_call();
 
         private:
-            lua_auto_block(const lua_auto_block &src) FUNC_DELETE;
-            const lua_auto_block &operator=(const lua_auto_block &src) FUNC_DELETE;
+            lua_auto_block(const lua_auto_block &src) UTIL_CONFIG_DELETED_FUNCTION;
+            const lua_auto_block &operator=(const lua_auto_block &src) UTIL_CONFIG_DELETED_FUNCTION;
 
             lua_State *state_;
             int stack_top_;
         };
+
+#if !(defined(LIBATFRAME_UTILS_ENABLE_RTTI) && LIBATFRAME_UTILS_ENABLE_RTTI)
+        std::string lua_binding_userdata_generate_metatable_name();
+#endif
 
         template <typename TC>
         struct lua_binding_userdata_info {
@@ -54,8 +46,28 @@ namespace script {
             typedef std::weak_ptr<value_type> userdata_type;
             typedef userdata_type *userdata_ptr_type;
 
-            static const char *get_lua_metatable_name() { return typeid(value_type).name(); }
+            static const char *get_lua_metatable_name() {
+#if defined(LIBATFRAME_UTILS_ENABLE_RTTI) && LIBATFRAME_UTILS_ENABLE_RTTI
+                return typeid(value_type).name();
+#else
+                if (!metatable_name_.empty()) {
+                    return metatable_name_.c_str();
+                }
+
+                metatable_name_ = lua_binding_userdata_generate_metatable_name();
+                return metatable_name_.c_str();
+#endif
+            }
+
+#if !(defined(LIBATFRAME_UTILS_ENABLE_RTTI) && LIBATFRAME_UTILS_ENABLE_RTTI)
+            static std::string metatable_name_;
+#endif
         };
+
+#if !(defined(LIBATFRAME_UTILS_ENABLE_RTTI) && LIBATFRAME_UTILS_ENABLE_RTTI)
+        template <typename TC>
+        std::string lua_binding_userdata_info<TC>::metatable_name_;
+#endif
 
         /**
          * 特殊实例（整个对象直接存在userdata里）
@@ -150,10 +162,14 @@ namespace script {
 
             bool exec_code(lua_State *L, const char *codes);
 
+            bool exec_file_with_env(lua_State *L, const char *file_path, int envidx);
+
+            bool exec_code_with_env(lua_State *L, const char *codes, int envidx);
+
             int lua_stackdump(lua_State *L);
 
             std::string lua_stackdump_to_string(lua_State *L);
-        }
-    }
-}
+        } // namespace fn
+    }     // namespace lua
+} // namespace script
 #endif

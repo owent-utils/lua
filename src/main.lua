@@ -1,7 +1,9 @@
 do
     local info = '============================= Load Lua Start ============================='
     if _G.jit then
-        info = info .. '\n========== Lua JIT Version:' .. tostring(_G.jit.version) .. ' ==========\n\n\n'
+        info = info .. '\n========== Lua JIT Version:' .. tostring(_G.jit.version) .. ' ==========\n'
+    else
+        info = info .. '\n========== Lua Version:' .. tostring(_G._VERSION) .. ' ==========\n'
     end
 
     if _G.lua_log then

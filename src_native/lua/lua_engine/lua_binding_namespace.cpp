@@ -47,11 +47,11 @@ namespace script {
         bool lua_binding_namespace::open(const char *namespace_, lua_State *L) {
             close();
 
+            lua_state_ = L;
             if (NULL == namespace_) {
                 return true;
             }
 
-            lua_state_ = L;
             ns_.clear();
             build_ns_set(namespace_);
 
@@ -136,5 +136,5 @@ namespace script {
             this_ns_ = cur_ns;
             return true;
         }
-    }
-}
+    } // namespace lua
+} // namespace script

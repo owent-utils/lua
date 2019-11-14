@@ -1,16 +1,12 @@
-﻿#include <cstdlib>
-#include <cmath>
+﻿#include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <fstream>
 #include <list>
 #include <sstream>
 
-#ifdef _MSC_VER
-#define STRING_NCASE_CMP(l, r) _stricmp(l, r)
-#else
-#define STRING_NCASE_CMP(l, r) strcasecmp(l, r)
-#endif
+#include <common/string_oprs.h>
 
 #include "lua_profile.h"
 
@@ -30,27 +26,27 @@ namespace script {
             return 0;
         }
 
-        static int lua_profile_reset(lua_State *L) {
+        static int lua_profile_reset(lua_State *) {
             lua_profile::instance()->reset();
             return 0;
         }
 
-        static int lua_profile_enable(lua_State *L) {
+        static int lua_profile_enable(lua_State *) {
             lua_profile::instance()->enable();
             return 0;
         }
 
-        static int lua_profile_disable(lua_State *L) {
+        static int lua_profile_disable(lua_State *) {
             lua_profile::instance()->disable();
             return 0;
         }
 
-        static int lua_profile_enable_native_prof(lua_State *L) {
+        static int lua_profile_enable_native_prof(lua_State *) {
             lua_profile::instance()->enable_native_prof();
             return 0;
         }
 
-        static int lua_profile_disable_native_prof(lua_State *L) {
+        static int lua_profile_disable_native_prof(lua_State *) {
             lua_profile::instance()->disable_native_prof();
             return 0;
         }
@@ -381,7 +377,7 @@ namespace script {
             return ss.str();
         }
 
-        std::string lua_profile::dump() { return std::move(dump_to(std::string())); }
+        std::string lua_profile::dump() { return dump_to(std::string()); }
 
         size_t lua_profile::push_fn(lua_profile_stack_data::stack_ptr_t ptr) {
             size_t ret = call_fn_prof_list_.size();
@@ -443,9 +439,9 @@ namespace script {
             //#endif
 
 
-            bool lua_func = (0 == STRING_NCASE_CMP("Lua", ar->what)) || (0 == ar->what[0]);
-            bool lua_is_main = !lua_func && (0 == STRING_NCASE_CMP("main", ar->what));
-            bool native_func = (!lua_func) && (!lua_is_main) && (0 == STRING_NCASE_CMP("C", ar->what));
+            bool lua_func = (0 == UTIL_STRFUNC_STRCASE_CMP("Lua", ar->what)) || (0 == ar->what[0]);
+            bool lua_is_main = !lua_func && (0 == UTIL_STRFUNC_STRCASE_CMP("main", ar->what));
+            bool native_func = (!lua_func) && (!lua_is_main) && (0 == UTIL_STRFUNC_STRCASE_CMP("C", ar->what));
 
             prof_key_t index_key;
             if (lua_func) {
@@ -454,26 +450,25 @@ namespace script {
                 index_key = prof_key_t(std::string("main:") + ar->source, ar->linedefined);
             } else if (native_func && profile->enabled_native_code_) {
                 char name[256] = {0};
-                if (0 == STRING_NCASE_CMP("method", ar->namewhat)) {
-                    sprintf(name, "%s.%s", "[native object]", ar->name);
+                if (0 == UTIL_STRFUNC_STRCASE_CMP("method", ar->namewhat)) {
+                    UTIL_STRFUNC_SNPRINTF(name, sizeof(name), "%s.%s", "[native object]", ar->name);
                 } else {
-                    sprintf(name, "%s.%s", ar->namewhat, ar->name);
+                    UTIL_STRFUNC_SNPRINTF(name, sizeof(name), "%s.%s", ar->namewhat, ar->name);
                 }
 
                 index_key = prof_key_t(name, ar->linedefined);
             }
 
-            if (!native_func && NULL != ar->name && 0 == STRING_NCASE_CMP("alloc_id", ar->name)) {
-                int k = 0;
-            }
+            // if (!native_func && NULL != ar->name && 0 == UTIL_STRFUNC_STRCASE_CMP("alloc_id", ar->name)) {
+            //     int k = 0;
+            // }
 
             // 开始调用函数统计
             if (LUA_HOOKCALL == ar->event) {
-
                 if (lua_func || lua_is_main) {
                     lua_profile_call_data &this_stack = profile->enter_lua_func(index_key);
                     if (this_stack.call_stats->name.empty() && NULL != ar->name && ar->name[0]) {
-                        if (0 == STRING_NCASE_CMP("field", ar->namewhat)) {
+                        if (0 == UTIL_STRFUNC_STRCASE_CMP("field", ar->namewhat)) {
                             // this_stack.call_stats->name = "[anonymous function]";
                             // 有可能是匿名函数, 而且更扯蛋的是，有时候不会触发LUA_MASKRET
                             this_stack.call_stats->name = ar->name;
@@ -483,10 +478,10 @@ namespace script {
                     }
                 } else if (native_func && profile->enabled_native_code_) {
                     char name[256] = {0};
-                    if (0 == STRING_NCASE_CMP("method", ar->namewhat)) {
-                        sprintf(name, "%s.%s", "[native object]", ar->name);
+                    if (0 == UTIL_STRFUNC_STRCASE_CMP("method", ar->namewhat)) {
+                        UTIL_STRFUNC_SNPRINTF(name, sizeof(name), "%s.%s", "[native object]", ar->name);
                     } else {
-                        sprintf(name, "%s.%s", ar->namewhat, ar->name);
+                        UTIL_STRFUNC_SNPRINTF(name, sizeof(name), "%s.%s", ar->namewhat, ar->name);
                     }
 
                     lua_profile_call_data &this_stack = profile->enter_native_func(index_key);
@@ -505,10 +500,10 @@ namespace script {
                     profile->exit_lua_func(index_key);
                 } else {
                     char name[256] = {0};
-                    if (0 == STRING_NCASE_CMP("method", ar->namewhat)) {
-                        sprintf(name, "%s.%s", "[native object]", ar->name);
+                    if (0 == UTIL_STRFUNC_STRCASE_CMP("method", ar->namewhat)) {
+                        UTIL_STRFUNC_SNPRINTF(name, sizeof(name), "%s.%s", "[native object]", ar->name);
                     } else if (native_func && profile->enabled_native_code_) {
-                        sprintf(name, "%s.%s", ar->namewhat, ar->name);
+                        UTIL_STRFUNC_SNPRINTF(name, sizeof(name), "%s.%s", ar->namewhat, ar->name);
                     }
 
                     if (name[0]) {
@@ -673,5 +668,5 @@ namespace script {
             call_stack_.pop_back();
             this_stack = NULL;
         }
-    }
-}
+    } // namespace lua
+} // namespace script

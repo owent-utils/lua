@@ -1,5 +1,5 @@
-#ifndef _SCRIPT_LUA_LUABINDINGNAMESPACE_
-#define _SCRIPT_LUA_LUABINDINGNAMESPACE_
+#ifndef SCRIPT_LUA_LUABINDINGNAMESPACE
+#define SCRIPT_LUA_LUABINDINGNAMESPACE
 
 #pragma once
 
@@ -69,10 +69,10 @@ namespace script {
 
 
             /**
-            * 添加常量(自动类型推断)
-            *
-            * @return  self.
-            */
+             * 添加常量(自动类型推断)
+             *
+             * @return  self.
+             */
             template <typename Ty>
             self_type &add_const(const char *const_name, Ty n) {
                 lua_State *state = get_lua_state();
@@ -83,10 +83,10 @@ namespace script {
             }
 
             /**
-            * 添加常量(字符串)
-            *
-            * @return  self.
-            */
+             * 添加常量(字符串)
+             *
+             * @return  self.
+             */
             self_type &add_const(const char *const_name, const char *n, size_t s);
 
             /**
@@ -149,7 +149,7 @@ namespace script {
             template <typename T, typename TP>
             friend class lua_binding_class;
         };
-    }
-}
+    } // namespace lua
+} // namespace script
 
 #endif

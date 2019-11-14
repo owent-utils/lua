@@ -1,9 +1,8 @@
-#ifndef _SCRIPT_LUA_LUAENGINE_
-#define _SCRIPT_LUA_LUAENGINE_
+#ifndef SCRIPT_LUA_LUAENGINE
+#define SCRIPT_LUA_LUAENGINE
 
 #pragma once
 
-#include "design_pattern/singleton.h"
 #include <assert.h>
 #include <chrono>
 #include <ctime>
@@ -16,30 +15,48 @@ extern "C" {
 #include "lua.h"
 }
 
+#include <design_pattern/noncopyable.h>
+#include <std/smart_ptr.h>
+
 #include "lua_binding_utils.h"
 
 namespace script {
     namespace lua {
 
+        class lua_engine;
+
         /** A lua automatic statistics. */
         struct lua_auto_stats {
-            lua_auto_stats();
+            lua_auto_stats(lua_engine &engine);
             ~lua_auto_stats();
 
-            std::chrono::steady_clock::time_point begin_clock_;
-            // std::chrono::steady_clock::time_point end_clock_;
+            std::chrono::system_clock::time_point begin_clock_;
+            lua_engine *engine_;
+            // std::chrono::system_clock::time_point end_clock_;
         };
 
-        class lua_engine : public util::design_pattern::singleton<lua_engine> {
-        protected:
-            lua_engine();
-            ~lua_engine();
+        class lua_engine : public ::util::design_pattern::noncopyable {
+        public:
+            typedef std::shared_ptr<lua_engine> ptr_t;
 
+        private:
+            struct constructor_helper {
+                lua_State *L;
+            };
 
         public:
+            lua_engine(constructor_helper &helper);
+            ~lua_engine();
+
             int add_on_inited(std::function<void(lua_State *)> fn);
 
-            int init(lua_State *state = NULL);
+            static ptr_t create();
+
+            static ptr_t create(lua_State *L);
+
+            int init();
+
+            int proc();
 
             void add_ext_lib(lua_CFunction regfunc);
 
@@ -133,13 +150,12 @@ namespace script {
             };
 
 
-            bool state_owner_;
             lua_State *state_;
             std::list<std::function<void(lua_State *)> > on_inited_;
 
             lua_stats lua_update_stats_;
         };
-    }
-}
+    } // namespace lua
+} // namespace script
 
 #endif

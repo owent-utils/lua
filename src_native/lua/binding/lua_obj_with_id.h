@@ -1,5 +1,5 @@
-#ifndef _SCRIPT_BINDING_LUAOBJWITHID_
-#define _SCRIPT_BINDING_LUAOBJWITHID_
+#ifndef SCRIPT_BINDING_LUAOBJWITHID
+#define SCRIPT_BINDING_LUAOBJWITHID
 
 #pragma once
 
@@ -36,7 +36,7 @@ namespace script {
         public:
             uint64_t id() const { return id_; }
 
-            static object_type *findByID(uint64_t id) {
+            static object_type *find_by_id(uint64_t id) {
                 typename std::map<uint64_t, value_type>::iterator iter = id_mgr_.find(id);
                 if (id_mgr_.end() == iter) return NULL;
 
@@ -55,7 +55,7 @@ namespace script {
 
         template <typename TOBJ>
         std::map<uint64_t, typename lua_obj_with_id<TOBJ>::value_type> lua_obj_with_id<TOBJ>::id_mgr_;
-    }
-}
+    } // namespace binding
+} // namespace script
 
 #endif

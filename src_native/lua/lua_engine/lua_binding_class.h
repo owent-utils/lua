@@ -1,5 +1,5 @@
-#ifndef _SCRIPT_LUA_LUABINDINGCLASS_
-#define _SCRIPT_LUA_LUABINDINGCLASS_
+#ifndef SCRIPT_LUA_LUABINDINGCLASS
+#define SCRIPT_LUA_LUABINDINGCLASS
 
 #pragma once
 
@@ -12,6 +12,8 @@
 #include <type_traits>
 #include <typeinfo>
 
+#include <config/atframe_utils_build_feature.h>
+#include <design_pattern/noncopyable.h>
 #include <std/explicit_declare.h>
 
 #include "lua_binding_mgr.h"
@@ -30,7 +32,7 @@ namespace script {
          * @date    2014/10/25
          */
         template <typename TC, typename TProxy = TC>
-        class lua_binding_class {
+        class lua_binding_class : public ::util::design_pattern::noncopyable {
         public:
             typedef TC value_type;
             typedef TProxy proxy_type;
@@ -54,7 +56,8 @@ namespace script {
 
         public:
             lua_binding_class(const char *lua_name, const char *namespace_, lua_State *L)
-                : lua_state_(L), lua_class_name_(lua_name), owner_ns_(namespace_, L) {
+                : lua_state_(L), lua_class_name_(lua_name), owner_ns_(namespace_, L), class_table_(0), class_memtable_(0),
+                  class_metatable_(0) {
                 register_class();
 
                 for (int i = 0; i < FT_MAX; ++i) {
@@ -63,7 +66,8 @@ namespace script {
             }
 
             lua_binding_class(const char *lua_name, lua_binding_namespace &ns)
-                : lua_state_(ns.get_lua_state()), lua_class_name_(lua_name), owner_ns_(ns) {
+                : lua_state_(ns.get_lua_state()), lua_class_name_(lua_name), owner_ns_(ns), class_table_(0), class_memtable_(0),
+                  class_metatable_(0) {
                 register_class();
                 memset(default_funcs_, NULL, sizeof(default_funcs_));
             }
@@ -186,7 +190,7 @@ namespace script {
              */
             template <typename R, typename TClass, typename... TParam>
             self_type &add_method(const char *func_name, R (TClass::*fn)(TParam... param)) {
-                typedef R (TClass::*fn_t)(TParam...);
+                // typedef R (TClass::*fn_t)(TParam...);
                 static_assert(std::is_convertible<value_type *, TClass *>::value, "class of member method invalid");
 
                 lua_State *state = get_lua_state();
@@ -194,7 +198,11 @@ namespace script {
 
                 member_proxy_method_t *fn_ptr = lua_binding_placement_new_and_delete<member_proxy_method_t>::create(state);
                 *fn_ptr = [fn](lua_State *L, pointer_type pobj) {
+#if defined(LIBATFRAME_UTILS_ENABLE_RTTI) && LIBATFRAME_UTILS_ENABLE_RTTI
                     return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(L, dynamic_cast<TClass *>(pobj.get()), fn);
+#else
+                    return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(L, static_cast<TClass *>(pobj.get()), fn);
+#endif
                 };
                 lua_pushcclosure(state, __member_method_unwrapper, 1);
                 lua_settable(state, get_member_table());
@@ -214,7 +222,7 @@ namespace script {
              */
             template <typename R, typename TClass, typename... TParam>
             self_type &add_method(const char *func_name, R (TClass::*fn)(TParam... param) const) {
-                typedef R (TClass::*fn_t)(TParam...);
+                // typedef R (TClass::*fn_t)(TParam...);
                 static_assert(std::is_convertible<value_type *, TClass *>::value, "class of member method invalid");
 
                 lua_State *state = get_lua_state();
@@ -222,7 +230,11 @@ namespace script {
 
                 member_proxy_method_t *fn_ptr = lua_binding_placement_new_and_delete<member_proxy_method_t>::create(state);
                 *fn_ptr = [fn](lua_State *L, pointer_type pobj) {
+#if defined(LIBATFRAME_UTILS_ENABLE_RTTI) && LIBATFRAME_UTILS_ENABLE_RTTI
                     return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(L, dynamic_cast<TClass *>(pobj.get()), fn);
+#else
+                    return detail::unwraper_member_fn<R, TClass, TParam...>::LuaCFunction(L, static_cast<TClass *>(pobj.get()), fn);
+#endif
                 };
                 lua_pushcclosure(state, __member_method_unwrapper, 1);
                 lua_settable(state, get_member_table());
@@ -306,9 +318,7 @@ namespace script {
              */
             void register_class() {
                 // 初始化后就不再允许新的类注册了
-                assert(false == lua_binding_mgr::instance()->isInited());
-
-                lua_binding_class_mgr_inst<proxy_type>::instance();
+                lua_binding_class_mgr_inst<proxy_type>::me();
 
                 lua_State *state = get_lua_state();
                 // 注册C++类
@@ -330,8 +340,8 @@ namespace script {
                     lua_settable(state, owner_ns_.get_namespace_table());
 
                     /**
-                    * table 初始化(静态成员)
-                    */
+                     * table 初始化(静态成员)
+                     */
                     lua_pushvalue(state, class_table_);
                     lua_setmetatable(state, class_table_);
 
@@ -341,8 +351,8 @@ namespace script {
                     lua_settable(state, class_table_);
 
                     /**
-                    * memtable 初始化(成员函数及变量)
-                    */
+                     * memtable 初始化(成员函数及变量)
+                     */
                     lua_pushvalue(state, class_memtable_);
                     lua_setmetatable(state, class_memtable_);
 
@@ -357,8 +367,8 @@ namespace script {
                     lua_settable(state, class_memtable_);
 
                     /**
-                    * metatable 初始化(userdata映射表)
-                    */
+                     * metatable 初始化(userdata映射表)
+                     */
                     lua_pushvalue(state, class_metatable_);
                     lua_setmetatable(state, class_metatable_);
                     // 继承关系链 userdata -> metatable(实例接口表): memtable(成员接口表): table(静态接口表) : ...
@@ -385,10 +395,10 @@ namespace script {
              */
             template <typename... TParams>
             static pointer_type create(lua_State *L, TParams &&... params) {
-                pointer_type obj = pointer_type(new proxy_type(std::forward<TParams>(params)...));
+                pointer_type obj = std::make_shared<proxy_type>(std::forward<TParams>(params)...);
 
                 // 添加到缓存表，防止被立即析构
-                lua_binding_class_mgr_inst<proxy_type>::instance()->add_ref(L, obj);
+                lua_binding_class_mgr_inst<proxy_type>::me()->add_ref(L, obj);
                 return obj;
             }
 
@@ -518,10 +528,10 @@ namespace script {
             lua_binding_namespace owner_ns_;
             lua_binding_namespace as_ns_;
 
-            int class_table_ = 0;     /**< 公共类型的Lua Table*/
-            int class_memtable_ = 0;  /**< The class table*/
-            int class_metatable_ = 0; /**< The class table*/
+            int class_table_;     /**< 公共类型的Lua Table*/
+            int class_memtable_;  /**< The class table*/
+            int class_metatable_; /**< The class table*/
         };
-    }
-}
+    } // namespace lua
+} // namespace script
 #endif
