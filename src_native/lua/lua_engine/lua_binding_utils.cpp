@@ -22,7 +22,7 @@ namespace script {
 
 #if !(defined(LIBATFRAME_UTILS_ENABLE_RTTI) && LIBATFRAME_UTILS_ENABLE_RTTI)
         std::string lua_binding_userdata_generate_metatable_name() {
-            static int clazz_idx = 0;
+            static int        clazz_idx = 0;
             std::stringstream ss;
             ss << "lua metatable " << (++clazz_idx);
             return ss.str();
@@ -43,6 +43,14 @@ namespace script {
             }
 
             bool load_item(lua_State *L, const std::string &path, bool auto_create_table) {
+                return load_item(L, path.c_str(), auto_create_table);
+            }
+
+            bool load_item(lua_State *L, const std::string &path, int table_index, bool auto_create_table) {
+                return load_item(L, path.c_str(), table_index, auto_create_table);
+            }
+
+            bool load_item(lua_State *L, const char* path, bool auto_create_table) {
 #ifdef LUA_RIDX_GLOBALS
                 lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
                 bool res = load_item(L, path, -1, auto_create_table);
@@ -53,12 +61,12 @@ namespace script {
 #endif
             }
 
-            bool load_item(lua_State *L, const std::string &path, int table_index, bool auto_create_table) {
-                int res = true;
+            bool load_item(lua_State *L, const char* path, int table_index, bool auto_create_table) {
+                bool                   res = true;
                 std::list<std::string> idents;
                 // strtok(str, ".") is not thread safe
-                const char *s = path.c_str(), *e = path.c_str();
-                while (*e) {
+                const char *s = path, *e = path;
+                while (e && *e) {
                     if ('.' == *e) {
                         idents.push_back(std::string(s, e));
                         s = e + 1;
@@ -89,6 +97,14 @@ namespace script {
             }
 
             bool remove_item(lua_State *L, const std::string &path) {
+                return remove_item(L, path.c_str());
+            }
+
+            bool remove_item(lua_State *L, const std::string &path, int table_index) {
+                return remove_item(L, path.c_str(), table_index);
+            }
+
+            bool remove_item(lua_State *L, const char* path) {
 #ifdef LUA_RIDX_GLOBALS
                 lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
                 bool res = remove_item(L, path, -1);
@@ -99,13 +115,13 @@ namespace script {
 #endif
             }
 
-            bool remove_item(lua_State *L, const std::string &path, int table_index) {
+            bool remove_item(lua_State *L, const char* path, int table_index) {
                 lua_auto_block block(L);
 
                 std::list<std::string> idents;
                 // strtok(str, ".") is not thread safe
-                const char *s = path.c_str(), *e = path.c_str();
-                while (*e) {
+                const char *s = path, *e = path;
+                while (e && *e) {
                     if ('.' == *e) {
                         idents.push_back(std::string(s, e));
                         s = e + 1;
@@ -194,7 +210,6 @@ namespace script {
 
             bool exec_code(lua_State *L, const char *codes) {
                 lua_auto_block autoBlock(L);
-
                 int hmsg = get_pcall_hmsg(L);
                 if (luaL_loadstring(L, codes) || lua_pcall(L, 0, LUA_MULTRET, hmsg)) {
                     WLOGERROR("%s", luaL_checkstring(L, -1));
@@ -222,10 +237,13 @@ namespace script {
 #if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM > 501
                 if (NULL == lua_setupvalue(L, -2, 1)) {
                     lua_pop(L, 1);
+                    WLOGERROR("%s", "lua_setupvalue failed");
+                    return false;
                 }
 #else
                 if (0 == lua_setfenv(L, -2)) {
-                    WLOGERROR("%s", "lua_setfenv(...) failed");
+                    WLOGERROR("%s", "lua_setfenv failed");
+                    return false;
                 }
 #endif
 
@@ -255,10 +273,13 @@ namespace script {
 #if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM > 501
                 if (NULL == lua_setupvalue(L, -2, 1)) {
                     lua_pop(L, 1);
+                    WLOGERROR("%s", "lua_setupvalue failed");
+                    return false;
                 }
 #else
                 if (0 == lua_setfenv(L, -2)) {
-                    WLOGERROR("%s", "lua_setfenv(...) failed");
+                    WLOGERROR("%s", "lua_setfenv failed");
+                    return false;
                 }
 #endif
 
@@ -268,6 +289,92 @@ namespace script {
                 }
 
                 return true;
+            }
+
+            bool exec_file_with_protected_env(lua_State *L, const char *file_path, const char* env_cache_path) {
+                lua_auto_block autoBlock(L);
+
+                if (mutable_env_table(L, env_cache_path)) {
+                    return exec_file_with_env(L, file_path, -1);
+                } else {
+                    return exec_file(L, file_path);
+                }
+            }
+
+            bool exec_code_with_protected_env(lua_State *L, const char *codes, const char* env_cache_path) {
+                lua_auto_block autoBlock(L);
+
+                if (mutable_env_table(L, env_cache_path)) {
+                    return exec_code_with_env(L, codes, -1);
+                } else {
+                    return exec_code(L, codes);
+                }
+            }
+
+            int mutable_env_table(lua_State *L, const char* env_cache_path) {
+                if (L == NULL) {
+                    return 0;
+                }
+
+                int top = lua_gettop(L);
+
+                if (env_cache_path && *env_cache_path) {
+                    if(load_item(L, env_cache_path, false)) {
+                        return 1;
+                    }
+                    lua_pop(L, 1);
+
+                    if (load_item(L, env_cache_path, true)) {   // table 1
+                        lua_newtable(L);                        // table 2
+                        int hmsg = get_pcall_hmsg(L);           // function 3
+#if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM > 501
+                        if (luaL_loadstring(L, "return _ENV") || lua_pcall(L, 0, LUA_MULTRET, hmsg)) {
+                            // ->| table 1, table 2, function 3, error string
+                            WLOGERROR("%s", luaL_checkstring(L, -1));
+                            lua_settop(L, top);
+                            return 0;
+                        }
+#else
+                        if (luaL_loadstring(L, "return _G") || lua_pcall(L, 0, LUA_MULTRET, hmsg)) {
+                            // ->| table 1, table 2, function 3, error string
+                            WLOGERROR("%s", luaL_checkstring(L, -1));
+                            lua_settop(L, top);
+                            return 0;
+                        }
+#endif
+                        // ->| table 1, table 2, function 3, table _G or _ENV
+                        lua_remove(L, -2); // remove function 3
+                        lua_setfield(L , -2, "__index");
+                        lua_setmetatable(L, -2);
+                        return 1;
+                    } else {
+                        lua_pop(L, 1);
+                    }
+                }
+
+                lua_newtable(L);                // table 1
+                lua_newtable(L);                // table 2
+                int hmsg = get_pcall_hmsg(L);   // function 3
+#if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM > 501
+                if (luaL_loadstring(L, "return _ENV") || lua_pcall(L, 0, LUA_MULTRET, hmsg)) {
+                    // ->| table 1, table 2, function 3, error string
+                    WLOGERROR("%s", luaL_checkstring(L, -1));
+                    lua_settop(L, top);
+                    return 0;
+                }
+#else
+                if (luaL_loadstring(L, "return _G") || lua_pcall(L, 0, LUA_MULTRET, hmsg)) {
+                    // ->| table 1, table 2, function 3, error string
+                    WLOGERROR("%s", luaL_checkstring(L, -1));
+                    lua_settop(L, top);
+                    return 0;
+                }
+#endif
+                // ->| table 1, table 2, function 3, table _G or _ENV
+                lua_remove(L, -2); // remove function
+                lua_setfield(L , -2, "__index");
+                lua_setmetatable(L, -2);
+                return 1;
             }
 
             int lua_stackdump(lua_State *L) {
@@ -298,7 +405,7 @@ namespace script {
             std::string lua_stackdump_to_string(lua_State *L) {
                 std::stringstream ss;
 
-                int index = 1;
+                int       index = 1;
                 lua_Debug ar;
                 while (lua_getstack(L, index, &ar)) {
                     lua_getinfo(L, "Snl", &ar);

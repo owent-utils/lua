@@ -1,4 +1,4 @@
-#ifndef SCRIPT_LUA_LUABINDINGWRAPPER
+﻿#ifndef SCRIPT_LUA_LUABINDINGWRAPPER
 #define SCRIPT_LUA_LUABINDINGWRAPPER
 
 #pragma once
@@ -150,7 +150,13 @@ namespace script {
                         typename std::remove_reference<typename std::remove_cv<typename std::remove_pointer<Ty>::type>::type>::type obj_t;
 
                     // 最好是不要这么用，如果有需要再加对非POD类型的支持吧
+#if (defined(__cplusplus) && __cplusplus >= 201402L) || ((defined(_MSVC_LANG) && _MSVC_LANG >= 201402L))
+                    static_assert(std::is_trivially_copyable<obj_t>::value, "custom type must be trivial copyable");
+#elif (defined(__cplusplus) && __cplusplus >= 201103L) || ((defined(_MSVC_LANG) && _MSVC_LANG >= 201103L))
+                    static_assert(std::is_trivial<obj_t>::value, "custom type must be trivial");
+#else
                     static_assert(std::is_pod<obj_t>::value, "custom type must be pod type");
+#endif
 
                     obj_t *ptr = reinterpret_cast<obj_t *>(lua_newuserdata(L, sizeof(obj_t)));
                     memcpy(ptr, &v, sizeof(v));
@@ -392,10 +398,10 @@ namespace script {
                       std::is_enum<Ty>::value || std::is_integral<Ty>::value,
                       wraper_var_lua_type<typename std::conditional<
                           std::is_enum<Ty>::value || std::is_unsigned<Ty>::value, lua_Unsigned,
-                          lua_Integer>::type>, // 枚举类型和未识别的整数(某些编译器的size_t和uint32_t/uint64_t被判定为不同类型)
+                          lua_Integer>::type>,  // 枚举类型和未识别的整数(某些编译器的size_t和uint32_t/uint64_t被判定为不同类型)
                       typename std::conditional<std::is_pointer<Ty>::value,
-                                                wraper_ptr_var_lua_type<Ty>, // 指针类型
-                                                wraper_var_lua_type<Ty>      // POD类型
+                                                wraper_ptr_var_lua_type<Ty>,  // 指针类型
+                                                wraper_var_lua_type<Ty>       // POD类型
                                                 >::type>::type {};
 
 
@@ -427,7 +433,7 @@ namespace script {
                     return 0;
                 }
             };
-        } // namespace detail
+        }  // namespace detail
 
         /**
          * @brief 自动打包调用lua函数
@@ -495,6 +501,6 @@ namespace script {
             return detail::wraper_bat_cmd::wraper_bat_count(L, std::forward_as_tuple(params...),
                                                             typename detail::build_args_index<TParams...>::index_seq_type());
         }
-    } // namespace lua
-} // namespace script
+    }  // namespace lua
+}  // namespace script
 #endif

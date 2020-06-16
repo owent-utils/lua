@@ -57,14 +57,14 @@ namespace script {
             bool auto_create = false;
             if (L == NULL) {
                 auto_create = true;
-                L = luaL_newstate();
+                L           = luaL_newstate();
             }
             if (NULL == L) {
                 return ptr_t();
             }
 
             constructor_helper helper;
-            helper.L = L;
+            helper.L              = L;
             lua_engine::ptr_t ret = std::make_shared<lua_engine>(helper);
             if (!ret) {
                 if (auto_create) {
@@ -292,9 +292,9 @@ namespace script {
         int lua_engine::get_pcall_hmsg() { return get_pcall_hmsg(get_lua_state()); }
 
         void lua_engine::update_global_timer(float delta) {
-            lua_State *state = get_lua_state();
+            lua_State *         state = get_lua_state();
             lua::lua_auto_block block(state);
-            lua_auto_stats autoLuaStat(*this);
+            lua_auto_stats      autoLuaStat(*this);
 
             int hmsg = get_pcall_hmsg(state);
 

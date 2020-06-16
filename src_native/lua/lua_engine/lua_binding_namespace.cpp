@@ -51,7 +51,7 @@ namespace script {
             if (NULL == namespace_) {
                 return true;
             }
-
+            
             ns_.clear();
             build_ns_set(namespace_);
 
@@ -136,5 +136,5 @@ namespace script {
             this_ns_ = cur_ns;
             return true;
         }
-    } // namespace lua
-} // namespace script
+    }
+}

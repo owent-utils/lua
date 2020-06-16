@@ -1,4 +1,4 @@
-#ifndef SCRIPT_LUA_LUABINDINGCLASS
+﻿#ifndef SCRIPT_LUA_LUABINDINGCLASS
 #define SCRIPT_LUA_LUABINDINGCLASS
 
 #pragma once
@@ -56,7 +56,11 @@ namespace script {
 
         public:
             lua_binding_class(const char *lua_name, const char *namespace_, lua_State *L)
-                : lua_state_(L), lua_class_name_(lua_name), owner_ns_(namespace_, L), class_table_(0), class_memtable_(0),
+                : lua_state_(L),
+                  lua_class_name_(lua_name),
+                  owner_ns_(namespace_, L),
+                  class_table_(0),
+                  class_memtable_(0),
                   class_metatable_(0) {
                 register_class();
 
@@ -66,7 +70,11 @@ namespace script {
             }
 
             lua_binding_class(const char *lua_name, lua_binding_namespace &ns)
-                : lua_state_(ns.get_lua_state()), lua_class_name_(lua_name), owner_ns_(ns), class_table_(0), class_memtable_(0),
+                : lua_state_(ns.get_lua_state()),
+                  lua_class_name_(lua_name),
+                  owner_ns_(ns),
+                  class_table_(0),
+                  class_memtable_(0),
                   class_metatable_(0) {
                 register_class();
                 memset(default_funcs_, NULL, sizeof(default_funcs_));
@@ -501,7 +509,7 @@ namespace script {
                 }
 
                 const char *class_name = get_lua_metatable_name();
-                userdata_ptr_type pobj = static_cast<userdata_ptr_type>(luaL_checkudata(L, 1, class_name)); // get 'self'
+                userdata_ptr_type pobj = static_cast<userdata_ptr_type>(luaL_checkudata(L, 1, class_name));  // get 'self'
 
                 if (NULL == pobj) {
                     WLOGERROR("lua try to call %s's member method but self not set or type error.\n", class_name);
@@ -532,6 +540,6 @@ namespace script {
             int class_memtable_;  /**< The class table*/
             int class_metatable_; /**< The class table*/
         };
-    } // namespace lua
-} // namespace script
+    }  // namespace lua
+}  // namespace script
 #endif

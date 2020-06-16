@@ -8,12 +8,12 @@
 #pragma once
 
 #include <assert.h>
+#include <stdint.h>
 #include <cstddef>
 #include <functional>
 #include <list>
 #include <map>
 #include <memory>
-#include <stdint.h>
 #include <string>
 
 #include <config/compiler_features.h>
@@ -141,8 +141,8 @@ namespace script {
             lua_binding_wrapper(lua_binding_mgr::func_type);
             ~lua_binding_wrapper();
         };
-    } // namespace lua
-} // namespace script
+    }  // namespace lua
+}  // namespace script
 
 #define LUA_BIND_VAR_NAME(name) script_lua_LuaBindMgr_Var_##name
 #define LUA_BIND_FN_NAME(name) script_lua_LuaBindMgr_Fn_##name

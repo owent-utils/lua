@@ -1,13 +1,13 @@
-#ifndef SCRIPT_LUA_LUABINDINGUNWRAPPER
+﻿#ifndef SCRIPT_LUA_LUABINDINGUNWRAPPER
 #define SCRIPT_LUA_LUABINDINGUNWRAPPER
 
 #pragma once
 
+#include <stdint.h>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <functional>
-#include <stdint.h>
 #include <string>
 #include <type_traits>
 
@@ -114,18 +114,24 @@ namespace script {
                         typename std::remove_reference<typename std::remove_cv<typename std::remove_pointer<Tt>::type>::type>::type obj_t;
 
                     // 最好是不要这么用，如果有需要再加对非POD类型的支持吧
+#if (defined(__cplusplus) && __cplusplus >= 201402L) || ((defined(_MSVC_LANG) && _MSVC_LANG >= 201402L))
+                    static_assert(std::is_trivially_copyable<obj_t>::value, "custom type must be trivial copyable");
+#elif (defined(__cplusplus) && __cplusplus >= 201103L) || ((defined(_MSVC_LANG) && _MSVC_LANG >= 201103L))
+                    static_assert(std::is_trivial<obj_t>::value, "custom type must be trivial");
+#else
                     static_assert(std::is_pod<obj_t>::value, "custom type must be pod type");
+#endif
 
                     if (lua_gettop(L) < index) {
-                        return static_cast<Tt>(0); // NULL static_cast from 'null_ptr' to 'unsigned long' is not allowed
+                        return static_cast<Tt>(0);  // NULL static_cast from 'null_ptr' to 'unsigned long' is not allowed
                     }
                     if (lua_isnil(L, index)) {
-                        return static_cast<Tt>(0); // NULL static_cast from 'null_ptr' to 'unsigned long' is not allowed
+                        return static_cast<Tt>(0);  // NULL static_cast from 'null_ptr' to 'unsigned long' is not allowed
                     }
 
                     obj_t *ptr = reinterpret_cast<obj_t *>(lua_touserdata(L, index));
                     if (NULL == ptr) {
-                        return static_cast<Tt>(0); // NULL static_cast from 'null_ptr' to 'unsigned long' is not allowed
+                        return static_cast<Tt>(0);  // NULL static_cast from 'null_ptr' to 'unsigned long' is not allowed
                     }
 
                     return static_cast<Tt>(*ptr);
@@ -400,9 +406,9 @@ namespace script {
                 : public std::conditional<
                       std::is_enum<Ty>::value || std::is_integral<Ty>::value,
                       unwraper_var_lua_type<Ty, typename std::conditional<std::is_enum<Ty>::value || std::is_unsigned<Ty>::value,
-                                                                          lua_Unsigned, lua_Integer>::type>,   // 枚举类型
-                      typename std::conditional<std::is_pointer<Ty>::value, unwraper_ptr_var_lua_type<Ty, Ty>, // 指针类型
-                                                unwraper_var_lua_type<Ty, Ty>                                  // POD类型
+                                                                          lua_Unsigned, lua_Integer>::type>,    // 枚举类型
+                      typename std::conditional<std::is_pointer<Ty>::value, unwraper_ptr_var_lua_type<Ty, Ty>,  // 指针类型
+                                                unwraper_var_lua_type<Ty, Ty>                                   // POD类型
                                                 >::type>::type {};
 
 
@@ -594,8 +600,8 @@ namespace script {
                         L, fn_wraper, typename build_args_index<TParam...>::index_seq_type());
                 }
             };
-        } // namespace detail
-    }     // namespace lua
-} // namespace script
+        }  // namespace detail
+    }      // namespace lua
+}  // namespace script
 
 #endif

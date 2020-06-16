@@ -386,8 +386,7 @@ namespace script {
         }
 
         void lua_profile::pop_fn(size_t p) {
-            while (call_fn_prof_list_.size() > p)
-                call_fn_prof_list_.pop_back();
+            while (call_fn_prof_list_.size() > p) call_fn_prof_list_.pop_back();
 
             // while (call_fn_prof_list_.size() > p) {
             //    while (call_fn_prof_list_.size() > p && call_fn_prof_list_.back()->parent.expired())
@@ -495,7 +494,7 @@ namespace script {
                 // [函数名/变量名] ar->name
                 // [名字类型] ar->namewhat  : field->匿名函数 , method->具名函数 , global->系统函数, local->本地C函数
                 // [类型] ar->what Lua|C|main
-            } else { // 结束调用函数统计
+            } else {  // 结束调用函数统计
                 if (lua_func || lua_is_main) {
                     profile->exit_lua_func(index_key);
                 } else {
@@ -660,7 +659,7 @@ namespace script {
                 fn_prof_ptr->call_inner_duration += this_stack->call_inner_duration;
 
                 lua_profile_stack_data::exit_fn(fn_prof_ptr);
-                fn_prof_ptr->call_native_duration += this_stack->call_inner_duration; // 父节点追加本地调用时间
+                fn_prof_ptr->call_native_duration += this_stack->call_inner_duration;  // 父节点追加本地调用时间
             }
 
 
@@ -668,5 +667,5 @@ namespace script {
             call_stack_.pop_back();
             this_stack = NULL;
         }
-    } // namespace lua
-} // namespace script
+    }  // namespace lua
+}  // namespace script

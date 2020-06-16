@@ -12,6 +12,6 @@ namespace script {
     namespace lua {
         int lua_time_ext_openlib(lua_State *L);
     }
-} // namespace script
+}
 
 #endif

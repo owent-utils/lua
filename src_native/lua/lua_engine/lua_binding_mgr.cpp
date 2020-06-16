@@ -44,7 +44,7 @@ namespace script {
         }
 
         int lua_binding_mgr::proc(lua_engine *engine) {
-            lua_State *L = NULL;
+            lua_State* L = NULL;
             if (NULL != engine) {
                 L = engine->get_lua_state();
             }
@@ -61,5 +61,5 @@ namespace script {
         lua_binding_wrapper::lua_binding_wrapper(lua_binding_mgr::func_type fn) { lua_binding_mgr::me()->add_bind(fn); }
 
         lua_binding_wrapper::~lua_binding_wrapper() {}
-    } // namespace lua
-} // namespace script
+    }
+}

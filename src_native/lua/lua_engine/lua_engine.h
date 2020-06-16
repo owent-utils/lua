@@ -1,4 +1,4 @@
-#ifndef SCRIPT_LUA_LUAENGINE
+﻿#ifndef SCRIPT_LUA_LUAENGINE
 #define SCRIPT_LUA_LUAENGINE
 
 #pragma once
@@ -31,7 +31,7 @@ namespace script {
             ~lua_auto_stats();
 
             std::chrono::system_clock::time_point begin_clock_;
-            lua_engine *engine_;
+            lua_engine *                          engine_;
             // std::chrono::system_clock::time_point end_clock_;
         };
 
@@ -150,7 +150,7 @@ namespace script {
             };
 
 
-            lua_State *state_;
+            lua_State *                                  state_;
             std::list<std::function<void(lua_State *)> > on_inited_;
 
             lua_stats lua_update_stats_;

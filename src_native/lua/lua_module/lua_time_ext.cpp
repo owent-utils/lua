@@ -1,7 +1,7 @@
-﻿#include <assert.h>
+﻿#include <cstdlib>
+#include <assert.h>
 #include <chrono>
 #include <cstdio>
-#include <cstdlib>
 #include <list>
 #include <numeric>
 
@@ -65,5 +65,5 @@ namespace script {
             lua_settop(L, top);
             return 0;
         }
-    } // namespace lua
-} // namespace script
+    }
+}
